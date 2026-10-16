@@ -1,0 +1,18 @@
+{
+  "strategy_version": "spy-sma-cross-v1",
+  "fast": 20,
+  "slow": 50,
+  "start": "2015-01-02",
+  "end": "2025-12-31",
+  "initial_cash": 100000.0,
+  "slippage_bps": 5.0,
+  "fee_fixed": 1.0,
+  "fee_bps": 0.0,
+  "impact_threshold": 0.01,
+  "impact_bps": 10.0,
+  "adv_window": 20,
+  "annualization": 252,
+  "dividend_policy": "cash_on_ex_date",
+  "terminal_policy": "mark_to_market",
+  "risk_free_annual": 0.0
+}

@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "etf-cio-reliability"
+version = "0.1.0"
+description = "Auditable single-ETF research backtest; CIO integration pending original contract"
+requires-python = ">=3.11"
+dependencies = ["yfinance", "matplotlib", "exchange-calendars"]
+
+[tool.setuptools.packages.find]
+include = ["etf_lab*"]
