@@ -1,0 +1,1593 @@
+commit 11321ef7c1a62e766d937aaf760f2d94fd3cfe18
+Author:     ninglinLiu <x07514475479@gmail.com>
+AuthorDate: Fri Oct 16 22:32:18 2026 +0800
+Commit:     ninglinLiu <x07514475479@gmail.com>
+CommitDate: Fri Oct 16 22:32:18 2026 +0800
+
+    Add auditable SPY research backtest and local evidence prerequisites
+
+diff --git a/.gitattributes b/.gitattributes
+new file mode 100644
+index 0000000..d0d6371
+--- /dev/null
++++ b/.gitattributes
+@@ -0,0 +1,2 @@
++* text=auto eol=lf
++*.png binary
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..508c19c
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,7 @@
++.venv/
++__pycache__/
++*.pyc
++.cache/
++scratch/
++.env
++*.log
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..cde105c
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,56 @@
++# ETF 回测与 CIO 可靠性接入准备
++
++本地独立实验仓库，分支 `experiment/spy-backtest-reliability`。已实现可逐笔复核的 SPY 样板、HTML 报告和本地证据检查；**未完成原 CIO 接入、指定旧算法对比或机构文章数字复现**。不应将本地测试通过写成整个任务验收通过。
++
++## 先看结果
++
++- [真实 SPY 回测报告](output/runs/spy-v1/report.html)：PNG 净值图、关键指标、53 笔成交、2,766 日账本、成本与数据声明。
++- [本地三场景证据](evidence/local-scenarios/summary.json)：只验证研究产物前置条件，全部使用合成测试数据。
++- [接入前方案](docs/INTEGRATION_PLAN.md)：已检查机制、拟接入位置、文件与验收命令。
++- [验收清单与排期](docs/ACCEPTANCE.md)：哪些已完成、哪些仍缺依赖。
++- [方法与限制](docs/METHODOLOGY.md)：成交、分红、股数、市场冲击、指标与复现定义。
++
++## 安装与离线复现（PowerShell，Python 3.11）
++
++```powershell
++python -m venv .venv
++.venv\Scripts\python.exe -m pip install -r requirements.lock.txt
++.venv\Scripts\python.exe -m unittest discover -s tests -v
++
++# 查看交付结果的完整性与当前输入适用性
++.venv\Scripts\python.exe -m etf_lab verify --run output/runs/spy-v1 --snapshot data/spy.json --config config/spy.json
++
++# 新运行 ID，使用冻结数据离线重算；同一 ID 同一输入再次执行会复用。
++.venv\Scripts\python.exe -m etf_lab run --snapshot data/spy.json --config config/spy.json --run-id my-reproduction-001 --output scratch/reproduction
++.venv\Scripts\python.exe scripts/audit_result.py scratch/reproduction/runs/my-reproduction-001
++
++# 三场景前置条件演示：使用新的隔离目录，保留原有证据。
++.venv\Scripts\python.exe scripts/demo_local_evidence.py --output scratch/demo-001
++```
++
++`verify --run ...` 不带新输入只检查历史完整性；必须同时指定 `--snapshot` 和 `--config` 才检查当前输入适用性。当前代码文件、计算提交或依赖版本变化会导致旧结果不匹配，这是预期行为；可以保留旧结果作为历史证据并使用新运行 ID 重算。没有原 CIO 的 downstream gate，外部消费者仍必须调用并正确处理校验失败。
++
++正常执行退出码 0；运行失败 1；冲突、完整性错误或输入拒绝 2。失败记录不包含成功 `result_id`，不能通过默认 `verify`。
++
++## 重新获取行情
++
++```powershell
++.venv\Scripts\python.exe -m etf_lab fetch --start 2014-01-01 --end 2026-01-01 --output scratch/spy-new.json
++```
++
++`end` 不包含在下载区间中。2014 年用于预热，业绩区间固定为 2015-01-02 至 2025-12-31。新快照必须使用新路径；同一 URL 的数据变化会改变字节哈希。网络下载失败时单独保存失败记录，不伪造数据。
++
++## 故障注入
++
++```powershell
++.venv\Scripts\python.exe -m etf_lab run --snapshot evidence/local-scenarios/fixtures/spy.json --config evidence/local-scenarios/fixtures/config.json --run-id simulated-data-001 --output scratch/failures --simulate-failure data
++.venv\Scripts\python.exe -m etf_lab run --snapshot evidence/local-scenarios/fixtures/spy.json --config evidence/local-scenarios/fixtures/config.json --run-id simulated-compute-001 --output scratch/failures --simulate-failure compute
++```
++
++这两条应退出 1，报告 `simulated: true`。`data` 注入发生在单次运行的数据校验入口，不是真实 Yahoo 故障；供应商异常另由 `tests/test_data.py` mock 验证。去掉注入并使用新运行 ID 恢复。失败 ID 不会被覆盖为成功。
++
++## 文件、版本与回退
++
++`etf_lab/` 为单 ETF 计算、产物输出与校验，不是 Agent 框架或总控。`data/spy.json` 保存 yfinance 返回字段和规范化日线；每次运行拷贝完整输入并记录源码/配置/快照哈希。`integrity.json` 校验清单不包含自身，可信锚是保留在实验提交中的原清单；能同时改清单的人仍可伪造记录，未宣称管理员防篡改。
++
++本项目不改相邻 `finresearch-lab`，也不访问真实投资账户。回退时停止使用本项目命令即可；若在后续实验提交撤销代码，使用 `git revert <commit>` 并保留原有结果目录。不要用 reset/覆盖输入方式消除失败证据。没有合并、推送、部署或数据库迁移步骤。
+diff --git a/config/spy.json b/config/spy.json
+new file mode 100644
+index 0000000..4d4c7cd
+--- /dev/null
++++ b/config/spy.json
+@@ -0,0 +1,18 @@
++{
++  "strategy_version": "spy-sma-cross-v1",
++  "fast": 20,
++  "slow": 50,
++  "start": "2015-01-02",
++  "end": "2025-12-31",
++  "initial_cash": 100000.0,
++  "slippage_bps": 5.0,
++  "fee_fixed": 1.0,
++  "fee_bps": 0.0,
++  "impact_threshold": 0.01,
++  "impact_bps": 10.0,
++  "adv_window": 20,
++  "annualization": 252,
++  "dividend_policy": "cash_on_ex_date",
++  "terminal_policy": "mark_to_market",
++  "risk_free_annual": 0.0
++}
+diff --git a/docs/ACCEPTANCE.md b/docs/ACCEPTANCE.md
+new file mode 100644
+index 0000000..5f33e21
+--- /dev/null
++++ b/docs/ACCEPTANCE.md
+@@ -0,0 +1,54 @@
++# 验收状态
++
++日期：2026-10-16。飞书原文访问失败，本地依据用户粘贴的任务文本；原文中未展示的验收表与两周排期表尚未核对。
++
++## 任务一
++
++- [x] SPY 20/50 交叉规则及成交时序文档化。
++- [x] yfinance 日线、冻结快照、精度、分红与复权口径声明。
++- [x] 滑点、固定/比例费用、冲击阈值与金额显式建模。
++- [x] 逐笔交易与逐日现金/持仓/净值可追溯。
++- [x] 自包含 HTML、嵌入 PNG、关键指标与新建简化参考对比。
++- [x] 跳空/复权及分红/费用/缺失/现金不足五类自动化案例。
++- [x] ETF ≠ 选股，以及数据版本和历史 LLM 边界说明。
++- [ ] 与**指定原项目现有算法**对比（仍缺源码与版本）。
++- [ ] 机构策略文章核心数字复现、相对偏差 ≤10%（未找到与本样板可直接比较的完整基准）。
++
++## 任务二
++
++- [x] 在新实验分支保留本地代码、数据与失败证据；未合并主分支。
++- [x] 提交现有机制检查和接入前方案；准备结果输入绑定、哈希与失败文件。
++- [x] 本地前置条件：参数/费用/同 URL 数据/来源变化拒用旧结果，历史保留。
++- [x] 本地前置条件：模拟数据/计算失败，拒用失败结果，新运行恢复，错误内容脱敏。
++- [x] 本地前置条件：同键同输入复用、同键不同输入冲突、新键重算、隔离副本内容篡改被发现。
++- [ ] 通过原 `cio.py` 及研究交接契约接入。
++- [ ] 原 CIO 读取/提交真正阻止失效依赖，重新验收下游。
++- [ ] 原 CIO 明确呈现失败阶段/原因及恢复状态。
++- [ ] 验证原系统不重复产生下游业务记录；冻结上下文新建案例而非覆盖。
++- [ ] 原 CIO 三场景截图/录屏及对应实际入口命令、回归测试。
++
++新建目录没有既有测试基线，不能报告“原 CIO 测试已全部通过”。相邻 finresearch-lab 未修改；其回归结果若保存，范围仅限该相邻项目，不代表 CIO。
++
++## 五类金融案例的预期值
++
++| 案例 | 独立验收点 |
++|---|---|
++| 跳空 | 信号日收盘 $12，次日开盘 $20；$1,000 买 50 股，不能按 $12 成交 |
++| 拆股/分红 | 2:1 拆股 71 股变 142 股，等价路径净值不变；除息 $1 时 71 股收 $71，价格同步降 $1 后净值不变；新买入者不领当日股息 |
++| 费用 | $14/$8 买卖，71 股，双边计入滑点、冲击、固定及比例费用；现金等于独立公式 |
++| 缺失 | 去掉一个预期交易日立即拒绝；NaN、重复日期、覆盖不足拒绝 |
++| 现金不足 | 现金 $14、开盘 $14、手续费 $1，拒绝买入而非透支；无交易胜率为不可用 |
++
++## 建议的十个工作日安排
++
++| 工作日 | 工作与退出条件 |
++|---|---|
++| D1–D2 | 冻结数据/策略/成本，完成五类手算测试；取得原 CIO 项目、契约、基线命令与旧算法 |
++| D3–D4 | 完成账本、HTML 与独立对账；完成指定旧算法同口径差异表 |
++| D5 | 机构文章数据与规则审查；不满足可复现条件时明确列为阻塞，不伪造偏差 |
++| D6 | 检查原机制，提交精确接入文件和验收命令，再开始 CIO 修改 |
++| D7–D8 | 原 CIO 完成适用性、失败恢复、幂等/完整性三个场景及下游阻断断言 |
++| D9 | 原回归测试、第三方从干净目录复现、回退检查 |
++| D10 | 固定提交版本，保存实际输出与演示，逐项验收；不合并主分支 |
++
++以上是排期建议，未创建定时任务，也未承诺缺失原项目依赖时自动达成全量验收。
+diff --git a/docs/INTEGRATION_PLAN.md b/docs/INTEGRATION_PLAN.md
+new file mode 100644
+index 0000000..c82a92f
+--- /dev/null
++++ b/docs/INTEGRATION_PLAN.md
+@@ -0,0 +1,47 @@
++# 接入前方案 · 2026-10-16
++
++状态：本地新建实验项目。尚未取得原 CIO 仓库、`cio.py`、研究交接契约和指定简化算法；任务二尚未接入、未验收。
++
++## 已检查的项目
++
++相邻目录 `finresearch-lab` 位于 `main`，检查时提交为 `df92e8c`，工作区干净。
++`finresearch/store.py` 已有 SHA-256、追加式 artifact、SQLite、来源修订和 lease；`benchmark.py` 已有次日开盘回放和成本计算。
++该项目没有找到 `cio.py` 或指定研究交接契约，不能据此假定它是 CIO。未修改该项目。
++
++## 本地范围与文件
++
++- `etf_lab/data.py`：yfinance 日线快照、交易日历、来源与内容哈希。
++- `etf_lab/engine.py`：规则、成交、现金、分红、逐笔及逐日账本、指标与本地简化参考。
++- `etf_lab/artifacts.py`：单次研究运行的不可覆盖文件、输入指纹、失败结果与校验；无 DAG、Agent 调度、审批或交易功能。
++- `etf_lab/report.py`：自包含 HTML 与嵌入 PNG。
++- `etf_lab/__main__.py`：下载、单次回测、校验命令。
++- `tests/`：五类金融边界案例与本地结果文件的适用性、失败恢复、重复请求、完整性测试。
++
++本地文件校验只能作为 CIO 接入前测试，不能替代通过真实 `cio.py` 读取/提交的验收。
++
++## 预定验收命令
++
++```powershell
++.venv\Scripts\python.exe -m unittest discover -s tests -v
++.venv\Scripts\python.exe -m etf_lab fetch --start 2014-01-01 --end 2026-01-01 --output data/spy.json
++.venv\Scripts\python.exe -m etf_lab run --snapshot data/spy.json --config config/spy.json --run-id spy-v1 --output output
++.venv\Scripts\python.exe -m etf_lab verify --run output/runs/spy-v1 --snapshot data/spy.json --config config/spy.json
++```
++
++## 取得原 CIO 项目后的接入位置
++
++先检查 `cio.py` 命令分派 → 研究结果交接入口 → 当前案例/冻结上下文校验 → 下游读取/提交校验。
++优先复用已有案例、冻结版本、结果存储、幂等、状态与拒绝机制。实际拟修改文件及真实验收命令必须在阅读原项目后再提交，不编造文件名或 CLI 参数。
++
++结果绑定：规则与参数版本、数据来源、快照字节哈希、样本区间、下载/数据截止时点、费用/成交/分红/终值假设、代码文件哈希、Git 版本、依赖版本和其他配置。
++旧结果保留其原始适用范围；新上下文校验拒绝旧结果。需要新冻结版本时新建原契约案例，不改旧案例。
++
++## 仍需的验收输入
++
++1. 原 CIO 仓库与契约、既有测试及基线版本。
++2. 指定“现有简化算法”的源码与运行口径。本地新建参考算法不能冒充该交付。
++3. 可复现的机构原文、明确的策略与样本、收益/回撤/交易次数、原始数据或许可内可得数据。
++   相对偏差定义为 `abs(reproduced-reference)/abs(reference)`；参考为 0 或未披露时不得自动通过。
++   SPY 20/50 日线规则不能与不同品种、不同期限或多资产期货策略强行比较。
++
++所有改动留在 `experiment/spy-backtest-reliability`，不合并主分支。无真实持仓、成交、CRO、审批或交易执行访问。
+diff --git a/docs/METHODOLOGY.md b/docs/METHODOLOGY.md
+new file mode 100644
+index 0000000..6f69dd2
+--- /dev/null
++++ b/docs/METHODOLOGY.md
+@@ -0,0 +1,45 @@
++# 方法与复核口径
++
++## 策略与账本
++
++SPY、20/50 日简单移动平均、只做多或现金。严格上穿：昨日快线 ≤ 慢线且今日快线 > 慢线；下穿相反；相等不交易。信号收盘产生，次交易日开盘成交。初始现金 $100,000，不为样本开始前的交叉补仓；样本前一日收盘产生的订单可以在样本首日开盘执行。以整数股买入，预算包括全部成本，余额为现金，无融资。
++
++数据源为 yfinance/Yahoo 日线，固定 `auto_adjust=False, back_adjust=False, actions=True, repair=False, keepna=True`。完整保存其返回表格字段，不把该表格称作原始 HTTP 响应。下载数据是当前可得版本，不是 point-in-time 历史供应商快照。下载参数的结束日为排他端点，见 [官方接口说明](https://ranaroussi.github.io/yfinance/reference/api/yfinance.download.html)。
++
++成交和市值使用不作股息复权的 OHLC；Adj Close 仅留存供检查，计算不使用。Yahoo 的 OHLC 仍可能拆股调整，故真实数据适配器遇到样本内拆股会明确拒绝，等待实现 as-traded 转换；不能让拆股调整价格再乘一次拆股股数。通用账本以 as-traded 数据为前提，合成案例验证 2:1 拆股股数/价格的财富恒等及信号连续性；未支持拆股导致碎股的 cash-in-lieu。
++
++分红归属除息日前已持有的股份；除息日开盘买入不领取该次分红。本版缺实际支付日，**明确假设除息日现金到账**；可能提前增加可投资现金，不能声称已完整模拟实际交收。没有复权收益加股息现金的双计，也无自动 DRIP。期末按收盘市值，不强制虚构一笔清仓。现金不计息，未计个人税、真实交易所费用及税收账户差异。
++
++## 成本
++
++- 滑点：每单 5 bp，买价加、卖价减。
++- 交易费：每单 $1；比例费配置为 0 bp，支持非零配置。
++- 市场冲击：订单按原开盘价计的名义金额 / 前 20 个完整交易日平均日成交额 >1%，额外 10 bp；只用执行日前数据。样板账户规模较小，真实样本冲击费用为零；合成测试强制触发此分支。
++- 阈值分母原任务未明确，本版选用流动性参与率而不是“占组合净值的仓位比例”，并在报告中标明。该函数是显式假设，不声称是经实证校准的冲击模型；未模拟开盘集合竞价容量或部分成交。
++- 成交价已含滑点和冲击，账本不会额外重复扣这两项费用。买入股数通过单调预算搜索保证现金非负。
++
++## 指标与独立复核
++
++收益率 = 末期净值 / 初始现金 − 1。年化 = `(末期净值/初始现金)^(252/样本交易日数)-1`。净值包括现金与证券收盘市值；首日收益相对初始本金。最大回撤包含初始本金为基准的峰值。夏普采用日超额收益均值 / 样本标准差 × √252，无风险年化配置默认为 0。
++
++成交笔数计每次买/卖 fill；完整交易次数计闭合持仓周期。胜率按完整交易的净盈亏（含进入/退出费用与期间分红）大于零计；未平仓不进入胜率分母，零收益不算胜。无闭合交易、零波动分别标记不可用，而非伪造为 0。
++
++`scripts/audit_result.py` 不导入主引擎，读取冻结行情、成交价格/股数/费用，重新计算每日分红、现金、持仓及净值。另有手算合成案例约束信号日、成交日、价格和净盈亏，防止仅有自我一致性检查。
++
++## 比较与外部复现
++
++本地简化参考使用同一交叉信号、同 SPY 和同区间，直接累乘下一段收盘到收盘收益，不计成本、允许分数份额、即时再投股息。它会把建仓前隔夜收益纳入，不能当作可成交账本。这是明确标识的新建参考，不是用户原项目的简化算法。
++
++机构文章复现仍未通过。本次核对了 AQR 的 [A Century of Evidence on Trend-Following Investing](https://www.aqr.com/Insights/Research/Journal-Article/A-Century-of-Evidence-on-Trend-Following-Investing)（2017-10-31）：它研究多类期货/远期的时序动量，样本追溯到 1880；不是 SPY 20/50 日均线样板，不能拿本样板数字与其收益/回撤直接比较。这是待选参考的排除理由，不是完成了机构对标。
++
++正式对标需冻结原文、表格、规则、品种、样本、费用、现金利息、收益类型、年化和回撤频率，分别计算收益/回撤/交易次数偏差。`abs(复现值-原文值)/abs(原文值) <= 10%` 为相对误差，而非差 10 个百分点。原文为零或不披露时应单列待定口径，不能自动算通过。不能调整样本或参数来凑验收数值。
++
++## 可靠性边界
++
++输入指纹绑定规则和所有配置、数据字节、来源、数据截止/下载时间、计算源码哈希及最后修改计算源码的 Git 提交、Python 和依赖版本。文档或证据提交不会改变计算提交；源码未提交修改仍被文件哈希识别。
++
++`run_id` 同时作为本地幂等键；同键同冻结输入复用原结果或原失败，同键异输入拒绝；主动重算使用新键。目录创建为排他操作，进程中断留下的不完整目录会拒绝使用，需新键重跑。调用日志追加写入但未提供多进程日志行事务保障；不声称是生产级分布式 exactly-once。
++
++完整性检查发现缺文件、内容变化、输入不匹配或失败状态即拒绝。没有 DAG、CIO 状态机、下游业务记录、真实审批或自动推进。**本地 gate 的存在不证明 CIO 会调用它**，必须在原项目入口接入并测试，才能验收任务二。
++
++ETF 样板不证明选股可信。未解决历史成分股、退市样本或财报当时版本；不宣称消除幸存者偏差与前视偏差。本策略不调用 LLM，未来涉及历史 LLM 策略时需另做预训练未来知识隔离与前向记录。
+diff --git a/etf_lab/__init__.py b/etf_lab/__init__.py
+new file mode 100644
+index 0000000..4cc7c9a
+--- /dev/null
++++ b/etf_lab/__init__.py
+@@ -0,0 +1,2 @@
++"""Single-ETF research calculations; no trading or CIO orchestration."""
++__version__ = "0.1.0"
+diff --git a/etf_lab/__main__.py b/etf_lab/__main__.py
+new file mode 100644
+index 0000000..93aa051
+--- /dev/null
++++ b/etf_lab/__main__.py
+@@ -0,0 +1,64 @@
++import argparse
++import json
++from pathlib import Path
++import sys
++
++from .artifacts import EvidenceError, execute, inputs, read_json, timestamp, verify, write_new
++from .engine import Config, DataError
++
++
++def main():
++    parser = argparse.ArgumentParser(description="Single-ETF local research; no CIO or trading execution")
++    sub = parser.add_subparsers(dest="command", required=True)
++    fetch = sub.add_parser("fetch")
++    fetch.add_argument("--start", required=True)
++    fetch.add_argument("--end", required=True, help="exclusive")
++    fetch.add_argument("--output", type=Path, required=True)
++    run = sub.add_parser("run")
++    run.add_argument("--snapshot", type=Path, required=True)
++    run.add_argument("--config", type=Path, required=True)
++    run.add_argument("--run-id", required=True)
++    run.add_argument("--output", type=Path, default=Path("output"))
++    run.add_argument("--simulate-failure", choices=["data", "compute"])
++    check = sub.add_parser("verify")
++    check.add_argument("--run", type=Path, required=True)
++    check.add_argument("--snapshot", type=Path)
++    check.add_argument("--config", type=Path)
++    args = parser.parse_args()
++    try:
++        if args.command == "fetch":
++            from .data import download_spy
++            if args.output.exists():
++                raise EvidenceError("SNAPSHOT_EXISTS: choose a new output path")
++            try:
++                snapshot = download_spy(args.start, args.end, Path(".cache/yfinance"))
++                write_new(args.output, snapshot)
++            except Exception as exc:
++                failure = {"status": "failed", "stage": "download", "simulated": False,
++                           "reason": "Unable to obtain and validate requested yfinance snapshot; no success snapshot created",
++                           "exception_type": type(exc).__name__, "time": timestamp()}
++                import uuid
++                write_new(args.output.parent / ("download-failed-" + uuid.uuid4().hex[:12] + ".json"), failure)
++                print(json.dumps(failure)); return 1
++            result = {"status": "succeeded", "snapshot": str(args.output), "bars": len(snapshot["bars"])}
++        elif args.command == "run":
++            result = execute(args.snapshot, Config(**read_json(args.config)), args.run_id, args.output, args.simulate_failure)
++        else:
++            if bool(args.snapshot) != bool(args.config):
++                raise EvidenceError("EXPECTED_INPUT_REQUIRES_BOTH_SNAPSHOT_AND_CONFIG")
++            expected = inputs(args.snapshot, Config(**read_json(args.config)))[0] if args.snapshot else None
++            if expected is not None: expected["simulated_fault"] = None
++            result = verify(args.run, expected)
++            result = {**result, "verified": True, "check_scope": "current_input_match" if expected else "historical_integrity_only"}
++        print(json.dumps(result, ensure_ascii=True, indent=2))
++        return 0 if result.get("status") == "succeeded" else 1
++    except (EvidenceError, DataError, ValueError, OSError, TypeError) as exc:
++        # Only our fixed EvidenceError codes are printable; arbitrary input or
++        # provider exception messages may contain secrets and are withheld.
++        reason = str(exc) if isinstance(exc, EvidenceError) else "INVALID_OR_UNAVAILABLE_INPUT; inspect the supplied files"
++        print(json.dumps({"status": "rejected", "reason": reason, "exception_type": type(exc).__name__}))
++        return 2
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/etf_lab/artifacts.py b/etf_lab/artifacts.py
+new file mode 100644
+index 0000000..1a1937d
+--- /dev/null
++++ b/etf_lab/artifacts.py
+@@ -0,0 +1,179 @@
++from __future__ import annotations
++
++from datetime import datetime, timezone
++import hashlib
++import importlib.metadata
++import json
++from pathlib import Path
++import platform
++import re
++import subprocess
++
++from .engine import Config, DataError, run_backtest, simplified_reference
++
++ROOT = Path(__file__).resolve().parents[1]
++
++
++class EvidenceError(ValueError):
++    pass
++
++
++def timestamp():
++    return datetime.now(timezone.utc).isoformat()
++
++
++def encoded(value) -> bytes:
++    return (json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False) + "\n").encode("utf-8")
++
++
++def sha(raw: bytes):
++    return hashlib.sha256(raw).hexdigest()
++
++
++def read_json(path: Path):
++    return json.loads(path.read_text(encoding="utf-8-sig"))
++
++
++def write_new(path: Path, value):
++    path.parent.mkdir(parents=True, exist_ok=True)
++    with path.open("xb") as f:
++        f.write(encoded(value))
++
++
++def code_identity():
++    files = list((ROOT / "etf_lab").glob("*.py")) + [ROOT / "pyproject.toml", ROOT / "requirements.lock.txt"]
++    hashes = {p.relative_to(ROOT).as_posix(): sha(p.read_bytes()) for p in files if p.exists()}
++    try:
++        # Evidence-only or documentation commits must not spuriously change the
++        # calculation revision. Actual source edits still change the file digest.
++        revision = subprocess.check_output(["git", "log", "-1", "--format=%H", "--", "etf_lab", "pyproject.toml", "requirements.lock.txt"], cwd=ROOT, stderr=subprocess.DEVNULL, text=True).strip() or "uncommitted"
++    except (OSError, subprocess.CalledProcessError):
++        revision = "uncommitted"
++    versions = {}
++    for name in ("yfinance", "matplotlib", "exchange-calendars", "numpy", "pandas"):
++        try: versions[name] = importlib.metadata.version(name)
++        except importlib.metadata.PackageNotFoundError: versions[name] = "not-installed"
++    return {"calculation_commit": revision, "file_hashes": hashes, "source_digest": sha(encoded(hashes)),
++            "python": platform.python_version(), "dependencies": versions}
++
++
++def inputs(snapshot_path: Path, cfg: Config):
++    return frozen_inputs(snapshot_path.read_bytes(), cfg)
++
++
++def frozen_inputs(raw: bytes, cfg: Config):
++    snapshot = json.loads(raw)
++    manifest = {"schema": "etf-input-v1", "strategy": cfg.to_dict(), "snapshot_sha256": sha(raw),
++                "source": snapshot.get("source"), "source_url": snapshot.get("source_url"),
++                "data_cutoff": snapshot.get("data_cutoff"), "observed_at": snapshot.get("observed_at"),
++                "price_basis": snapshot.get("price_basis"), "code": code_identity()}
++    return manifest, snapshot
++
++
++def verify(run_dir: Path, expected: dict | None = None, require_success=True):
++    try:
++        integrity = read_json(run_dir / "integrity.json")
++        allowed_files = {"input.json", "snapshot.json", "receipt.json", "result.json", "report.html", "nav.png"}
++        if not isinstance(integrity, dict) or integrity.get("algorithm") != "sha256" or not isinstance(integrity.get("files"), dict):
++            raise EvidenceError("INVALID_INTEGRITY_SCHEMA")
++        if not {"input.json", "snapshot.json", "receipt.json"}.issubset(integrity["files"]) or set(integrity["files"]) - allowed_files:
++            raise EvidenceError("INVALID_ARTIFACT_NAMES")
++        actual = {p.relative_to(run_dir).as_posix() for p in run_dir.rglob("*") if p.is_file() and p.name != "integrity.json"}
++        if actual != set(integrity["files"]):
++            raise EvidenceError("ARTIFACT_SET_MISMATCH")
++        for name, recorded in integrity["files"].items():
++            path = run_dir / name
++            if path.resolve().parent != run_dir.resolve() or path.is_symlink():
++                raise EvidenceError("UNSAFE_ARTIFACT_PATH")
++            if sha(path.read_bytes()) != recorded:
++                raise EvidenceError("INTEGRITY_MISMATCH: " + name)
++        frozen = read_json(run_dir / "input.json")
++        if sha((run_dir / "snapshot.json").read_bytes()) != frozen["snapshot_sha256"]:
++            raise EvidenceError("SNAPSHOT_BINDING_MISMATCH")
++        receipt = read_json(run_dir / "receipt.json")
++        if receipt["input_id"] != sha(encoded(frozen)):
++            raise EvidenceError("INPUT_BINDING_MISMATCH")
++        if expected is not None and frozen != expected:
++            raise EvidenceError("INPUT_MISMATCH: result remains historical evidence only")
++        if receipt["status"] == "succeeded":
++            if not all((run_dir / name).is_file() for name in ("result.json", "report.html", "nav.png")):
++                raise EvidenceError("SUCCESS_ARTIFACT_MISSING")
++            if receipt["result_id"] != sha(encoded(read_json(run_dir / "result.json"))):
++                raise EvidenceError("RESULT_BINDING_MISMATCH")
++        elif require_success:
++            raise EvidenceError("RUN_NOT_SUCCEEDED: " + receipt.get("error_code", receipt["status"]))
++        return receipt
++    except (OSError, KeyError, TypeError, json.JSONDecodeError):
++        raise EvidenceError("MISSING_OR_INVALID_EVIDENCE") from None
++
++
++def log_call(output: Path, run_id: str, action: str, input_id: str):
++    # Invocation audit is outside immutable result directories and is not
++    # presented as administrator-proof. No request bodies or exception text.
++    output.mkdir(parents=True, exist_ok=True)
++    with (output / "calls.jsonl").open("a", encoding="utf-8") as f:
++        f.write(json.dumps({"time": timestamp(), "run_id": run_id, "action": action, "input_id": input_id}) + "\n")
++
++
++def execute(snapshot_path: Path, cfg: Config, run_id: str, output: Path, fault: str | None = None):
++    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,79}", run_id):
++        raise EvidenceError("INVALID_RUN_ID")
++    if fault not in (None, "data", "compute"):
++        raise EvidenceError("INVALID_SIMULATED_FAULT")
++    snapshot_raw = snapshot_path.read_bytes()
++    frozen, snapshot = frozen_inputs(snapshot_raw, cfg)
++    frozen["simulated_fault"] = fault
++    input_id = sha(encoded(frozen))
++    run_dir = output / "runs" / run_id
++    if run_dir.exists():
++        try:
++            receipt = verify(run_dir, frozen, require_success=False)
++        except EvidenceError:
++            log_call(output, run_id, "duplicate_rejected_integrity_or_input_conflict", input_id)
++            raise
++        log_call(output, run_id, "reused_" + receipt["status"], input_id)
++        return {**receipt, "reused": True}
++    run_dir.parent.mkdir(parents=True, exist_ok=True)
++    try:
++        run_dir.mkdir()  # Exclusive directory claim; never overwrite history.
++    except FileExistsError:
++        raise EvidenceError("RUN_IN_PROGRESS: retry after completion") from None
++    write_new(run_dir / "input.json", frozen)
++    with (run_dir / "snapshot.json").open("xb") as f:
++        f.write(snapshot_raw)
++    stage = "data_validation"
++    receipt = {"schema": "etf-result-receipt-v1", "run_id": run_id, "input_id": input_id,
++               "created_at": timestamp(), "simulated": fault is not None,
++               "scope": "local_research_only", "cio_integration": "pending_original_repository"}
++    try:
++        if fault == "data":
++            raise DataError("Simulated data source outage")
++        from .engine import validate
++        validate(snapshot, cfg)
++        stage = "calculation"
++        if fault == "compute":
++            raise ArithmeticError("Simulated arithmetic failure")
++        result = run_backtest(snapshot, cfg)
++        result["simplified_reference"] = simplified_reference(snapshot, cfg)
++        result["acceptance"] = {"existing_algorithm_comparison": "PENDING_ORIGINAL_ALGORITHM",
++                                "institutional_replication": "PENDING_COMPARABLE_PRIMARY_BENCHMARK",
++                                "cio_scenarios": "PENDING_ORIGINAL_CIO_CONTRACT"}
++        stage = "report"
++        from .report import render
++        render(run_dir, result, cfg, snapshot, receipt)
++        write_new(run_dir / "result.json", result)
++        receipt.update(status="succeeded", result_id=sha(encoded(result)))
++    except Exception as exc:
++        code = {"data_validation": "DATA_UNAVAILABLE_OR_INVALID", "calculation": "CALCULATION_FAILED", "report": "REPORT_FAILED"}[stage]
++        receipt.update(status="failed", failed_stage=stage, error_code=code,
++                       reason=("SIMULATED: " if fault else "") + {
++                           "data_validation": "Data acquisition/validation did not produce usable input.",
++                           "calculation": "Calculation did not complete; no successful result is available.",
++                           "report": "Report generation did not complete; partial files are not valid evidence."}[stage],
++                       exception_type=type(exc).__name__)
++    write_new(run_dir / "receipt.json", receipt)
++    hashes = {p.name: sha(p.read_bytes()) for p in run_dir.iterdir() if p.is_file()}
++    write_new(run_dir / "integrity.json", {"algorithm": "sha256", "files": hashes,
++                                          "limitation": "Integrity check, not administrator-proof signing"})
++    log_call(output, run_id, receipt["status"], input_id)
++    return receipt
+diff --git a/etf_lab/data.py b/etf_lab/data.py
+new file mode 100644
+index 0000000..07a9e4d
+--- /dev/null
++++ b/etf_lab/data.py
+@@ -0,0 +1,72 @@
++from __future__ import annotations
++
++import contextlib
++from datetime import date, datetime, timedelta, timezone
++import io
++import json
++import logging
++from pathlib import Path
++
++from .engine import DataError
++
++
++def download_spy(start: str, end: str, cache: Path) -> dict:
++    """end is exclusive. Keep the vendor dataframe before normalization."""
++    import exchange_calendars as xcals
++    import yfinance as yf
++    if date.fromisoformat(start) >= date.fromisoformat(end):
++        raise DataError("Download start must precede exclusive end")
++    cache.mkdir(parents=True, exist_ok=True)
++    yf.set_tz_cache_location(str(cache))
++    # Provider exception/request text is never emitted to durable logs.
++    previous_logging = logging.root.manager.disable
++    try:
++        logging.disable(logging.CRITICAL)
++        with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
++            frame = yf.Ticker("SPY").history(start=start, end=end, interval="1d", auto_adjust=False,
++                                             back_adjust=False, actions=True, repair=False, keepna=True,
++                                             raise_errors=True, timeout=30)
++    except Exception:
++        raise DataError("YFINANCE_DOWNLOAD_FAILED: no usable provider response; request details omitted") from None
++    finally:
++        logging.disable(previous_logging)
++    if frame.empty:
++        raise DataError("YFINANCE_EMPTY_RESPONSE")
++    required = {"Open", "High", "Low", "Close", "Adj Close", "Volume", "Dividends", "Stock Splits"}
++    if not required.issubset(frame.columns):
++        raise DataError("YFINANCE_REQUIRED_COLUMNS_MISSING")
++    # Yahoo OHLC is split adjusted even with auto_adjust=False. This adapter is
++    # deliberately limited to a no-split SPY sample; it must not double-adjust.
++    if (frame["Stock Splits"] != 0).any():
++        raise DataError("SPY_SPLIT_REQUIRES_AS_TRADED_NORMALIZATION: unsupported vendor split sample")
++    if "Capital Gains" in frame and (frame["Capital Gains"] != 0).any():
++        raise DataError("CAPITAL_GAIN_DISTRIBUTION_REQUIRES_EXPLICIT_ACCOUNTING")
++    provider_rows, bars = [], []
++    for timestamp, record in frame.iterrows():
++        day = timestamp.tz_convert("America/New_York").date().isoformat() if timestamp.tzinfo else timestamp.date().isoformat()
++        provider_rows.append({"date": day, **{k: float(record[k]) for k in required}})
++        bars.append({"date": day, "open": float(record["Open"]), "high": float(record["High"]),
++                     "low": float(record["Low"]), "close": float(record["Close"]),
++                     "volume": float(record["Volume"]), "dividend": float(record["Dividends"]), "split": 1.0})
++    last = (date.fromisoformat(end) - timedelta(days=1)).isoformat()
++    # Calendar bounds are actual sessions. Pad so holiday endpoints (e.g. Jan 1)
++    # remain in bounds when asking for the inclusive requested date interval.
++    calendar = xcals.get_calendar("XNYS", start=(date.fromisoformat(start)-timedelta(days=31)).isoformat(),
++                                  end=(date.fromisoformat(end)+timedelta(days=31)).isoformat())
++    sessions = [s.date().isoformat() for s in calendar.sessions_in_range(start, last)]
++    if [r["date"] for r in bars] != sessions:
++        raise DataError("TRADING_SESSION_COVERAGE_MISMATCH: missing/extra daily bars")
++    result = {"schema": "etf-bars-v1", "symbol": "SPY", "source": "yfinance / Yahoo Finance",
++              "source_url": "https://finance.yahoo.com/quote/SPY/history/", "interval": "1d",
++              "observed_at": datetime.now(timezone.utc).isoformat(), "data_cutoff": bars[-1]["date"],
++              "coverage": {"start": start, "end_inclusive": last},
++              "calendar": f"exchange_calendars {xcals.__version__} XNYS daily session calendar",
++              "price_basis": "auto_adjust=False; no SPY splits in downloaded window; unadjusted-for-dividend OHLC used for execution",
++              "dividend_basis": "Yahoo cash distributions on ex-date; actual payment dates unavailable",
++              "adjustment_note": "Vendor Adj Close retained only as evidence, NEVER used for signals, execution or an additional return credit",
++              "snapshot_note": "Frozen yfinance returned dataframe, not raw HTTP bytes or a historical point-in-time vendor vintage",
++              "provider_version": yf.__version__, "request": {"start": start, "end_exclusive": end, "auto_adjust": False, "repair": False, "actions": True},
++              "expected_sessions": sessions, "provider_rows": provider_rows, "bars": bars, "synthetic": False}
++    # Invalid prices/NaNs cannot be silently represented as valid JSON.
++    json.dumps(result, allow_nan=False)
++    return result
+diff --git a/etf_lab/engine.py b/etf_lab/engine.py
+new file mode 100644
+index 0000000..b427ce9
+--- /dev/null
++++ b/etf_lab/engine.py
+@@ -0,0 +1,285 @@
++from __future__ import annotations
++
++from dataclasses import asdict, dataclass
++from datetime import date
++import math
++import statistics
++
++
++class DataError(ValueError):
++    """A dataset cannot support the declared experiment."""
++
++
++@dataclass(frozen=True)
++class Config:
++    strategy_version: str = "spy-sma-cross-v1"
++    fast: int = 20
++    slow: int = 50
++    start: str = "2015-01-02"
++    end: str = "2025-12-31"
++    initial_cash: float = 100000.0
++    slippage_bps: float = 5.0
++    fee_fixed: float = 1.0
++    fee_bps: float = 0.0
++    impact_threshold: float = 0.01
++    impact_bps: float = 10.0
++    adv_window: int = 20
++    annualization: int = 252
++    dividend_policy: str = "cash_on_ex_date"
++    terminal_policy: str = "mark_to_market"
++    risk_free_annual: float = 0.0
++
++    def __post_init__(self):
++        for name in ("fast", "slow", "adv_window", "annualization"):
++            value = getattr(self, name)
++            if type(value) is not int or value < 1:
++                raise ValueError(f"{name} must be a positive integer")
++        if self.fast >= self.slow:
++            raise ValueError("fast must be smaller than slow")
++        for name in ("initial_cash", "slippage_bps", "fee_fixed", "fee_bps", "impact_threshold", "impact_bps", "risk_free_annual"):
++            value = getattr(self, name)
++            if isinstance(value, bool) or not isinstance(value, (float, int)) or not math.isfinite(value) or value < 0:
++                raise ValueError(f"{name} must be finite and nonnegative")
++        if self.initial_cash <= 0 or self.slippage_bps + self.impact_bps >= 10000 or self.fee_bps >= 10000:
++            raise ValueError("Invalid capital or cost rates")
++        if date.fromisoformat(self.start) > date.fromisoformat(self.end):
++            raise ValueError("start must be before end")
++        if self.dividend_policy != "cash_on_ex_date" or self.terminal_policy != "mark_to_market":
++            raise ValueError("Unsupported dividend or terminal convention")
++        if not self.strategy_version:
++            raise ValueError("Strategy version is required")
++
++    def to_dict(self):
++        return asdict(self)
++
++
++def validate(snapshot: dict, cfg: Config) -> list[dict]:
++    if snapshot.get("schema") != "etf-bars-v1":
++        raise DataError("Unsupported snapshot schema")
++    if snapshot.get("symbol") != "SPY":
++        raise DataError("This sample supports SPY only")
++    for key in ("source", "observed_at", "data_cutoff", "price_basis", "calendar"):
++        if not snapshot.get(key):
++            raise DataError(f"Snapshot metadata missing: {key}")
++    rows = snapshot.get("bars", [])
++    expected = snapshot.get("expected_sessions", [])
++    if not rows or not expected:
++        raise DataError("Bars and an explicit trading-session calendar are required")
++    dates = [r["date"] for r in rows]
++    if dates != sorted(set(dates)) or expected != sorted(set(expected)):
++        raise DataError("Duplicate or unordered sessions")
++    if dates != expected:
++        raise DataError("Missing or extra trading sessions; no forward fill is allowed")
++    for r in rows:
++        date.fromisoformat(r["date"])
++        for key in ("open", "high", "low", "close", "volume", "dividend", "split"):
++            v = r.get(key)
++            if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
++                raise DataError(f"Invalid {key} at {r['date']}")
++        if min(r[k] for k in ("open", "high", "low", "close", "split")) <= 0 or min(r["volume"], r["dividend"]) < 0:
++            raise DataError(f"Nonpositive price/split or negative volume/dividend at {r['date']}")
++        if r["low"] > min(r["open"], r["close"]) or r["high"] < max(r["open"], r["close"]):
++            raise DataError(f"OHLC bounds inconsistent at {r['date']}")
++    indices = [i for i, r in enumerate(rows) if cfg.start <= r["date"] <= cfg.end]
++    if not indices:
++        raise DataError("No sessions in the evaluation interval")
++    if indices[0] < max(cfg.slow + 1, cfg.adv_window):
++        raise DataError("Insufficient pre-period warm-up")
++    # Snapshot must cover the full requested interval, even when its last day is a holiday.
++    coverage = snapshot.get("coverage", {})
++    if coverage.get("start", "9999") > cfg.start or coverage.get("end_inclusive", "0000") < cfg.end:
++        raise DataError("Snapshot does not cover the full requested interval")
++    if snapshot["data_cutoff"] < dates[-1]:
++        raise DataError("Data cutoff precedes the last bar")
++    return rows
++
++
++def signal_series(rows: list[dict], cfg: Config) -> list[dict]:
++    """Only events known by each close are applied; never uses future adjusted close."""
++    closes, signals = [], []
++    previous_spread = None
++    for r in rows:
++        if r["split"] != 1:
++            closes = [c / r["split"] for c in closes]
++        closes.append(r["close"])
++        fast = sum(closes[-cfg.fast:]) / cfg.fast if len(closes) >= cfg.fast else None
++        slow = sum(closes[-cfg.slow:]) / cfg.slow if len(closes) >= cfg.slow else None
++        action = None
++        if slow is not None:
++            spread = fast - slow
++            if previous_spread is not None:
++                if previous_spread <= 0 < spread:
++                    action = "BUY"
++                elif previous_spread >= 0 > spread:
++                    action = "SELL"
++            previous_spread = spread
++        signals.append({"date": r["date"], "fast": fast, "slow": slow, "action": action})
++    return signals
++
++
++def quote(side: str, quantity: int, base: float, adv: float, cfg: Config) -> dict:
++    if quantity <= 0:
++        raise ValueError("Order quantity must be positive")
++    if adv <= 0:
++        raise DataError("Prior average daily traded value is zero; impact cannot be estimated")
++    reference_notional = quantity * base
++    participation = reference_notional / adv
++    impact_bps = cfg.impact_bps if participation > cfg.impact_threshold else 0.0
++    sign = 1 if side == "BUY" else -1
++    price = base * (1 + sign * (cfg.slippage_bps + impact_bps) / 10000)
++    gross = quantity * price
++    fee = cfg.fee_fixed + gross * cfg.fee_bps / 10000
++    return {"price": price, "notional": gross, "fee": fee,
++            "slippage_cost": reference_notional * cfg.slippage_bps / 10000,
++            "impact_cost": reference_notional * impact_bps / 10000,
++            "impact_bps": impact_bps, "participation": participation,
++            "cash_change": -(gross + fee) if side == "BUY" else gross - fee}
++
++
++def affordable(cash: float, base: float, adv: float, cfg: Config) -> int:
++    lo, hi = 0, int(cash // base)
++    while lo < hi:
++        mid = (lo + hi + 1) // 2
++        if -quote("BUY", mid, base, adv, cfg)["cash_change"] <= cash:
++            lo = mid
++        else:
++            hi = mid - 1
++    return lo
++
++
++def metrics(equity: list[dict], initial: float, cfg: Config, closed_pnls: list[float], fills: int) -> dict:
++    previous, peak, drawdown = initial, initial, 0.0
++    returns = []
++    for row in equity:
++        value = row["equity"]
++        returns.append(value / previous - 1)
++        previous = value
++        peak = max(peak, value)
++        drawdown = min(drawdown, value / peak - 1)
++    total = previous / initial - 1
++    rf_daily = (1 + cfg.risk_free_annual) ** (1 / cfg.annualization) - 1
++    excess = [r - rf_daily for r in returns]
++    vol = statistics.stdev(excess) if len(excess) > 1 else 0
++    return {"total_return": total, "annualized_return": (1 + total) ** (cfg.annualization / len(returns)) - 1,
++            "max_drawdown": drawdown,
++            "sharpe": statistics.mean(excess) / vol * math.sqrt(cfg.annualization) if vol > 1e-14 else None,
++            "win_rate": sum(p > 0 for p in closed_pnls) / len(closed_pnls) if closed_pnls else None,
++            "fill_count": fills, "round_trip_count": len(closed_pnls), "observations": len(returns),
++            "ending_equity": previous}
++
++
++def run_backtest(snapshot: dict, cfg: Config) -> dict:
++    rows = validate(snapshot, cfg)
++    signals = signal_series(rows, cfg)
++    cash, shares = cfg.initial_cash, 0
++    trades, daily, events, rejections, pnl = [], [], [], [], []
++    entry_cost, cycle_dividends, entry_date = 0.0, 0.0, None
++    cumulative_dividends = 0.0
++    for i, bar in enumerate(rows):
++        if not cfg.start <= bar["date"] <= cfg.end:
++            continue
++        opening_cash, opening_shares = cash, shares
++        if bar["split"] != 1 and shares:
++            new_quantity = shares * bar["split"]
++            if not math.isclose(new_quantity, round(new_quantity), abs_tol=1e-10):
++                raise DataError("Fractional split entitlement requires a cash-in-lieu policy")
++            shares = round(new_quantity)
++            events.append({"date": bar["date"], "kind": "split", "ratio": bar["split"],
++                           "shares_before": opening_shares, "shares_after": shares, "cash_change": 0})
++        distribution = shares * bar["dividend"]
++        if distribution:
++            cash += distribution
++            cycle_dividends += distribution
++            cumulative_dividends += distribution
++            events.append({"date": bar["date"], "kind": "dividend", "eligible_shares": shares,
++                           "per_share": bar["dividend"], "cash_change": distribution,
++                           "assumption": "Cash available on ex-date, not actual payment date"})
++        prior = signals[i - 1]
++        # Dollar ADV uses only completed sessions strictly before execution.
++        adv = sum(r["close"] * r["volume"] for r in rows[i-cfg.adv_window:i]) / cfg.adv_window
++        side = prior["action"]
++        trade_cash = 0.0
++        if side == "BUY" and shares == 0:
++            quantity = affordable(cash, bar["open"], adv, cfg)
++            if quantity == 0:
++                rejections.append({"date": bar["date"], "signal_date": prior["date"],
++                                   "reason": "INSUFFICIENT_CASH", "cash": cash})
++            else:
++                fill = quote(side, quantity, bar["open"], adv, cfg)
++                trade_cash = fill["cash_change"]
++                cash += trade_cash
++                shares = quantity
++                entry_cost, cycle_dividends, entry_date = -trade_cash, 0.0, bar["date"]
++                trades.append({"date": bar["date"], "signal_date": prior["date"], "side": side,
++                               "reference_open": bar["open"], "quantity": quantity, **fill,
++                               "realized_pnl": None, "cash_after": cash, "shares_after": shares})
++        elif side == "SELL" and shares:
++            quantity = shares
++            fill = quote(side, quantity, bar["open"], adv, cfg)
++            trade_cash = fill["cash_change"]
++            cash += trade_cash
++            realized = trade_cash - entry_cost + cycle_dividends
++            pnl.append(realized)
++            shares = 0
++            trades.append({"date": bar["date"], "signal_date": prior["date"], "side": side,
++                           "reference_open": bar["open"], "quantity": quantity, **fill,
++                           "realized_pnl": realized, "entry_date": entry_date,
++                           "entry_cost_including_fee": entry_cost, "cycle_dividends": cycle_dividends,
++                           "cash_after": cash, "shares_after": shares})
++            entry_cost, cycle_dividends, entry_date = 0.0, 0.0, None
++        if cash < -1e-8 or shares < 0:
++            raise ArithmeticError("Cash or holding invariant violated")
++        equity = cash + shares * bar["close"]
++        cash_residual = cash - opening_cash - distribution - trade_cash
++        if abs(cash_residual) > 1e-7:
++            raise ArithmeticError("Cash ledger failed to reconcile")
++        daily.append({"date": bar["date"], "open": bar["open"], "close": bar["close"],
++                      "cash_before": opening_cash, "shares_before": opening_shares,
++                      "dividend_cash": distribution, "trade_cash": trade_cash,
++                      "cash": cash, "shares": shares, "market_value": shares * bar["close"],
++                      "equity": equity, "cash_reconciliation_residual": cash_residual,
++                      "prior_adv_dollars": adv, "fast": signals[i]["fast"], "slow": signals[i]["slow"],
++                      "signal_after_close": signals[i]["action"]})
++    open_pnl = shares * daily[-1]["close"] - entry_cost + cycle_dividends if shares else 0.0
++    pnl_residual = daily[-1]["equity"] - cfg.initial_cash - sum(pnl) - open_pnl
++    if abs(pnl_residual) > 1e-6:
++        raise ArithmeticError("Total PnL failed to reconcile")
++    return {"metrics": metrics(daily, cfg.initial_cash, cfg, pnl, len(trades)),
++            "trades": trades, "daily": daily, "corporate_actions": events, "rejected_orders": rejections,
++            "cost_totals": {k: sum(t[k] for t in trades) for k in ("fee", "slippage_cost", "impact_cost")},
++            "dividend_income": cumulative_dividends, "open_position_pnl": open_pnl,
++            "realized_pnl": sum(pnl), "pnl_reconciliation_residual": pnl_residual,
++            "open_shares": shares, "last_signal_not_executed": signals[[r["date"] for r in rows].index(daily[-1]["date"])]["action"],
++            "conventions": {"signal": "Strict crossing after close; equality holds prior position; initially cash; pre-period crossings ignored except previous-close order",
++                            "execution": "Next session open; integer shares; no leverage; no partial fills or order carry",
++                            "prices": "As-traded OHLC; signal history adjusted for splits known by that close; no dividend adjustment",
++                            "dividends": "Prior holders receive cash on ex-date (explicit simplifying assumption); no DRIP",
++                            "terminal": "Mark open positions at last close; no fictional forced liquidation",
++                            "win_rate": "Positive net PnL / closed round trips, including fees and received dividends; open positions excluded",
++                            "impact": "Order reference value / previous N sessions average daily traded value, strict threshold; not portfolio allocation fraction"}}
++
++
++def simplified_reference(snapshot: dict, cfg: Config) -> dict:
++    """New local diagnostic comparator, NOT the customer's existing algorithm.
++
++    Binary fractional exposure, close-to-close total return, no costs. Although
++    the signal is shifted, it still captures the overnight return before a
++    realizable next-open fill. No cash/share accounting is performed.
++    """
++    rows = validate(snapshot, cfg)
++    signals = signal_series(rows, cfg)
++    nav, exposure = cfg.initial_cash, 0
++    daily = []
++    for i, r in enumerate(rows):
++        if not cfg.start <= r["date"] <= cfg.end:
++            continue
++        prior = signals[i-1]["action"]
++        if prior == "BUY": exposure = 1
++        elif prior == "SELL": exposure = 0
++        total_return = r["split"] * (r["close"] + r["dividend"]) / rows[i-1]["close"] - 1
++        nav *= 1 + exposure * total_return
++        daily.append({"date": r["date"], "equity": nav})
++    result = metrics(daily, cfg.initial_cash, cfg, [], 0)
++    result.update({"fill_count": None, "round_trip_count": None})
++    return {"label": "新建简化参考（不是原项目现有算法）", "metrics": result, "daily": daily,
++            "differences": ["同标的、同样本、同交叉信号", "前一收盘信号直接作用于下一段收盘到收盘收益，含不可实现的建仓前隔夜收益", "零费用、零冲击、分数份额、股息即时再投资", "无成交及现金账本，交易次数与胜率不冒充已核对指标"]}
+diff --git a/etf_lab/report.py b/etf_lab/report.py
+new file mode 100644
+index 0000000..1585240
+--- /dev/null
++++ b/etf_lab/report.py
+@@ -0,0 +1,79 @@
++from __future__ import annotations
++
++import base64
++from datetime import date
++from html import escape
++import json
++from pathlib import Path
++
++from .engine import Config
++
++
++def table(rows: list[dict], columns: list[tuple[str, str]]) -> str:
++    def cell(v):
++        if v is None: return "—"
++        if isinstance(v, float): return f"{v:,.6f}"
++        return escape(str(v))
++    return '<div class="scroll"><table><thead><tr>' + ''.join(f'<th>{escape(label)}</th>' for key, label in columns) + '</tr></thead><tbody>' + ''.join('<tr>' + ''.join(f'<td>{cell(row.get(key))}</td>' for key, label in columns) + '</tr>' for row in rows) + '</tbody></table></div>'
++
++
++def chart(path: Path, result: dict, cfg: Config):
++    import matplotlib
++    matplotlib.use("Agg")
++    import matplotlib.pyplot as plt
++    dates = [date.fromisoformat(r["date"]) for r in result["daily"]]
++    values = [r["equity"] / cfg.initial_cash for r in result["daily"]]
++    comparator = [r["equity"] / cfg.initial_cash for r in result["simplified_reference"]["daily"]]
++    plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10, "axes.spines.top": False, "axes.spines.right": False})
++    fig, ax = plt.subplots(figsize=(12, 4.5), dpi=150)
++    fig.patch.set_facecolor("#ffffff")
++    ax.plot(dates, values, color="#087d78", linewidth=1.7, label="Audited cash/share ledger, net of costs")
++    ax.plot(dates, comparator, color="#b3905b", linewidth=1.2, alpha=.85, label="New simplified reference (not original system)")
++    ax.set_ylabel("Equity / initial capital")
++    ax.grid(axis="y", alpha=.15)
++    ax.legend(frameon=False, loc="upper left")
++    fig.tight_layout()
++    fig.savefig(path, metadata={"Software": "etf-cio-reliability"})
++    plt.close(fig)
++
++
++def render(directory: Path, result: dict, cfg: Config, snapshot: dict, receipt: dict):
++    chart(directory / "nav.png", result, cfg)
++    image = base64.b64encode((directory / "nav.png").read_bytes()).decode()
++    m, baseline = result["metrics"], result["simplified_reference"]["metrics"]
++    def pct(x): return "—" if x is None else f"{x:.2%}"
++    def number(x): return "—" if x is None else f"{x:.2f}"
++    definitions = [("total_return", "累计收益", pct), ("annualized_return", "年化收益", pct),
++                   ("max_drawdown", "最大回撤", pct), ("sharpe", "夏普比率", number),
++                   ("win_rate", "已平仓胜率", pct), ("fill_count", "成交笔数", str), ("round_trip_count", "完整交易次数", str)]
++    cards = ''.join(f'<div class="card"><span>{label}</span><strong>{formatter(m[key])}</strong></div>' for key, label, formatter in definitions)
++    comparisons = [{"metric": label, "ledger": formatter(m[key]), "reference": "—" if baseline[key] is None else formatter(baseline[key]),
++                    "delta": "—" if m[key] is None or baseline[key] is None else (f'{(m[key]-baseline[key])*100:.4f} pp' if key in ("total_return", "annualized_return", "max_drawdown", "win_rate") else number(m[key]-baseline[key]))} for key, label, formatter in definitions]
++    trades = table(result["trades"], [("date","成交日"),("signal_date","信号日"),("side","方向"),("reference_open","原始开盘"),("price","成交价"),("quantity","股数"),("fee","手续费 $"),("slippage_cost","滑点 $"),("impact_cost","冲击 $"),("realized_pnl","闭合交易盈亏 $"),("cash_after","成交后现金 $")])
++    daily = table(result["daily"], [("date","日期"),("close","收盘价"),("fast","快线"),("slow","慢线"),("signal_after_close","收盘后信号"),("dividend_cash","分红现金"),("trade_cash","交易现金流"),("cash","现金"),("shares","股数"),("market_value","市值"),("equity","净值 $"),("cash_reconciliation_residual","现金核对差额")])
++    events = table(result["corporate_actions"], [("date","日期"),("kind","事件"),("eligible_shares","分红股数"),("per_share","每股股息"),("cash_change","现金变动"),("ratio","拆股比率")])
++    cost = result["cost_totals"]
++    synthetic = '<span class="badge warning">合成测试数据 · 非市场业绩</span>' if snapshot.get("synthetic") else '<span class="badge">真实历史日线 · 冻结快照</span>'
++    html = f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SPY 回测审计报告</title>
++<style>*{{box-sizing:border-box}}body{{margin:0;color:#203737;background:#eff4f2;font:15px/1.65 "Microsoft YaHei",system-ui,sans-serif}}main{{max-width:1280px;margin:auto;padding:44px 32px 80px}}header{{margin-bottom:28px}}.eyebrow{{font-size:12px;letter-spacing:2px;color:#567570}}h1{{font-size:36px;line-height:1.2;margin:12px 0}}h2{{font-size:22px;margin:0 0 14px}}p{{margin:10px 0}}.muted{{color:#687b76}}.badge{{display:inline-block;font-size:12px;border-radius:4px;background:#d6eeE5;color:#185f4d;padding:4px 10px}}.warning{{background:#f6e7c7;color:#79541f}}.note{{border-left:4px solid #b68e50;padding:14px 18px;background:#fff9ed;margin:24px 0}}section{{background:white;border:1px solid #dce5e1;border-radius:9px;padding:26px;margin:22px 0}}.cards{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}}.card{{background:#fff;padding:18px;border:1px solid #dce5e1;border-radius:8px}}.card span{{display:block;color:#688078;font-size:12px}}.card strong{{display:block;font-size:25px;margin-top:8px;font-weight:600}}img{{width:100%;height:auto}}.scroll{{overflow:auto;max-height:550px}}table{{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums}}th,td{{border-bottom:1px solid #e8edeb;padding:10px 12px;text-align:right;white-space:nowrap}}th{{position:sticky;top:0;background:#eaf2ef;color:#426358}}th:first-child,td:first-child{{text-align:left}}tr:nth-child(even){{background:#fafcfb}}pre{{padding:16px;background:#f1f5f3;overflow:auto;white-space:pre-wrap;word-break:break-word;font:12px/1.7 Consolas,monospace}}summary{{cursor:pointer;font-weight:600;padding:6px 0}}a{{color:#087d78}}@media(max-width:700px){{main{{padding:24px 14px}}.cards{{grid-template-columns:repeat(2,1fr)}}h1{{font-size:28px}}section{{padding:18px}}}}@media print{{body{{background:white}}main{{padding:0}}section{{break-inside:avoid}}.scroll{{max-height:none}}}}</style></head><body><main>
++<header><div class="eyebrow">ETF RESEARCH / AUDITABLE BACKTEST</div><h1>SPY 均线择时 · 回测审计报告</h1><p class="muted">{escape(cfg.start)} — {escape(cfg.end)} · SMA {cfg.fast}/{cfg.slow} · 初始资金 ${cfg.initial_cash:,.0f}</p>{synthetic}</header>
++<div class="note"><strong>本地回测报告；完整项目验收尚未完成。</strong><br>原项目简化算法对比、机构文章数字复现及真实 CIO 三场景接入均待补齐。本页的简化参考为本地新建，不代表原项目算法。</div>
++<div class="cards">{cards}</div>
++<section><h2>净值曲线</h2><p class="muted">净值由现金与持仓逐日重建。末期未平仓按收盘估值，不虚构清仓。</p><img alt="SPY 逐笔账本与本地简化参考净值曲线" src="data:image/png;base64,{image}"></section>
++<section><h2>规则与成交时序</h2><p>收盘后快均线上穿慢均线发出买入，反向交叉发出卖出，下一交易日开盘成交；初始为空仓。</p><pre>after close[t]:
++  if fast[t-1] &lt;= slow[t-1] and fast[t] &gt; slow[t]: BUY
++  if fast[t-1] &gt;= slow[t-1] and fast[t] &lt; slow[t]: SELL
++at open[t+1]:
++  credit prior-holder dividend under declared ex-date cash assumption
++  BUY: largest integer quantity affordable after all costs
++  SELL: liquidate held shares; include entry/exit costs and dividends in PnL
++at close[t+1]: equity = cash + shares × unadjusted close</pre><p>样本前数据仅用于预热；不会为样本前已经发生的交叉追补持仓。最后一个收盘信号没有未来成交日时不执行。均线使用当时已知拆股调整、未作股息调整的价格。</p></section>
++<section><h2>成本、现金与盈亏勾稽</h2><p>单边滑点 {cfg.slippage_bps:g} bp；每笔固定手续费 ${cfg.fee_fixed:g}，另按成交额 {cfg.fee_bps:g} bp。订单原始开盘名义金额超过前 {cfg.adv_window} 个交易日平均日成交额的 {cfg.impact_threshold:.2%} 时，额外冲击 {cfg.impact_bps:g} bp。此阈值是流动性参与率，非组合仓位占比；是假设模型，不是实测冲击。</p><p>合计手续费 <strong>${cost['fee']:,.2f}</strong> · 滑点 <strong>${cost['slippage_cost']:,.2f}</strong> · 冲击 <strong>${cost['impact_cost']:,.2f}</strong> · 分红 <strong>${result['dividend_income']:,.2f}</strong></p><p>期末净值 ${m['ending_equity']:,.2f} − 本金 ${cfg.initial_cash:,.2f} = 已平仓盈亏 ${result['realized_pnl']:,.2f} + 未平仓周期盈亏 ${result['open_position_pnl']:,.2f}。勾稽差额：{result['pnl_reconciliation_residual']:.10f}。</p><p class="muted">滑点与冲击已进入成交价，不再重复扣费。未平仓周期盈亏含该周期已收到分红；胜率只统计已完成买卖周期。年化使用 {cfg.annualization} 个交易日，夏普采用样本标准差，年化无风险利率 {cfg.risk_free_annual:.2%}；无交易或零波动指标显示“—”。现金利息为零，未计税。</p></section>
++<section><h2>与新建简化参考的差异</h2>{table(comparisons,[("metric","指标"),("ledger","逐笔账本"),("reference","本地简化参考"),("delta","账本 − 参考")])}<p>同样本、同 SPY、同交叉信号。参考算法将前一收盘信号直接乘下一段收盘到收盘收益，包含建仓前的隔夜变化；还假设零成本、分数份额与分红即时再投资。差异共同体现成交时点、成本及资金约束，不能全部归因于单一因素。</p></section>
++<section><h2>逐笔成交 · {len(result['trades'])} 笔</h2><p class="muted">买入尚无闭合交易盈亏；卖出盈亏包含买入成本、卖出费用及持仓期间分红。JSON 保留完整精度，表格显示六位小数。</p>{trades}</section>
++<section><h2>逐日账本 · {len(result['daily'])} 个交易日</h2><details><summary>展开信号、现金、持仓、净值与现金勾稽</summary>{daily}</details></section>
++<section><h2>公司行动与拒单</h2><details><summary>展开分红 / 拆股事件（{len(result['corporate_actions'])}）</summary>{events}</details><p>现金不足拒单：{len(result['rejected_orders'])} 笔。</p><pre>{escape(json.dumps(result['rejected_orders'],ensure_ascii=False,indent=2))}</pre></section>
++<section><h2>数据与可追溯信息</h2><p>来源：{escape(snapshot['source'])} · 精度：日线 · 抓取：{escape(snapshot['observed_at'])} · 数据截止：{escape(snapshot['data_cutoff'])}。</p><p>{escape(snapshot['price_basis'])}</p><p><strong>分红简化：</strong>数据没有实际支付日，本实验明确假设除息日现金到账，可能提前增加可投资现金。没有把 Adj Close 收益与分红现金重复计入。历史价格为当前下载版本，不能证明历史当时可见的数据版本。</p><p>输入标识：<code>{escape(receipt['input_id'])}</code><br>运行标识：<code>{escape(receipt['run_id'])}</code></p><p>旁附 input.json、snapshot.json、result.json、receipt.json、integrity.json 供离线复算与校验。</p><pre>{escape(json.dumps(cfg.to_dict(), ensure_ascii=False, indent=2))}</pre></section>
++<section><h2>验收状态与边界</h2><p>五类金融边界测试与本地证据测试的实际输出见交付目录；报告生成成功不等于 CIO 接入成功。</p><ul><li>原简化算法：待提供源码与指定版本。</li><li>机构复现 ≤10%：尚未通过；未用不同比较口径凑数字。</li><li>CIO 适用性、失败恢复、幂等及篡改阻断：待通过原项目真实入口验证。</li><li>ETF 样板不证明美股选股回测可信；历史成分股、退市与财报历史版本问题未解决。</li><li>本策略不调用 LLM。若以后加入历史 LLM 决策，需单独处理模型未来知识污染。</li><li>仅研究实验，无真实持仓、下单、CRO 或审批写入。</li></ul><p class="muted">数据接口口径参见 <a href="https://ranaroussi.github.io/yfinance/reference/api/yfinance.download.html">yfinance 官方文档</a>。行情版权与使用范围由原数据提供方规定。</p></section>
++</main></body></html>'''
++    (directory / "report.html").write_text(html, encoding="utf-8")
+diff --git a/pyproject.toml b/pyproject.toml
+new file mode 100644
+index 0000000..1adb1ef
+--- /dev/null
++++ b/pyproject.toml
+@@ -0,0 +1,13 @@
++[build-system]
++requires = ["setuptools>=68"]
++build-backend = "setuptools.build_meta"
++
++[project]
++name = "etf-cio-reliability"
++version = "0.1.0"
++description = "Auditable single-ETF research backtest; CIO integration pending original contract"
++requires-python = ">=3.11"
++dependencies = ["yfinance", "matplotlib", "exchange-calendars"]
++
++[tool.setuptools.packages.find]
++include = ["etf_lab*"]
+diff --git a/requirements.lock.txt b/requirements.lock.txt
+new file mode 100644
+index 0000000..1a91416
+--- /dev/null
++++ b/requirements.lock.txt
+@@ -0,0 +1,36 @@
++beautifulsoup4==4.15.0
++certifi==2026.7.22
++cffi==2.1.1
++charset-normalizer==3.5.2
++contourpy==1.3.3
++curl_cffi==0.16.3
++cycler==0.12.1
++exchange_calendars==4.13.2
++fonttools==4.67.0
++idna==3.20
++kiwisolver==1.5.1
++korean_lunar_calendar==0.4.0
++lxml==6.1.3
++matplotlib==3.11.2
++multitasking==0.0.13
++numpy==2.4.6
++packaging==26.3
++pandas==3.0.6
++peewee==4.5.3
++pillow==12.3.0
++platformdirs==4.13.3
++protobuf==7.36.2
++pycparser==3.11
++pyluach==2.3.0
++pyparsing==3.3.3
++python-dateutil==2.9.0.post0
++pytz==2026.5
++requests==2.34.2
++six==1.17.0
++soupsieve==3.0.3
++toolz==1.2.0
++typing_extensions==4.16.0
++tzdata==2026.5
++urllib3==2.8.0
++websockets==17.2
++yfinance==1.7.0
+diff --git a/scripts/audit_result.py b/scripts/audit_result.py
+new file mode 100644
+index 0000000..f7bb31c
+--- /dev/null
++++ b/scripts/audit_result.py
+@@ -0,0 +1,40 @@
++"""Independent cash/holdings reconciliation; no imports from the engine."""
++import argparse
++import json
++from pathlib import Path
++
++
++def main():
++    parser = argparse.ArgumentParser()
++    parser.add_argument("run",type=Path)
++    args = parser.parse_args()
++    read = lambda name:json.loads((args.run/name).read_text(encoding="utf-8"))
++    result, frozen, snapshot = read("result.json"),read("input.json"),read("snapshot.json")
++    cash = frozen["strategy"]["initial_cash"]
++    shares = 0
++    by_date = {r["date"]:r for r in snapshot["bars"]}
++    fills = {t["date"]:t for t in result["trades"]}
++    max_residual = 0
++    for day in result["daily"]:
++        bar = by_date[day["date"]]
++        shares *= bar["split"]
++        cash += shares * bar["dividend"]
++        if day["date"] in fills:
++            trade = fills[day["date"]]
++            assert trade["signal_date"] < trade["date"]
++            if trade["side"] == "BUY":
++                cash -= trade["quantity"] * trade["price"] + trade["fee"]
++                shares += trade["quantity"]
++            else:
++                cash += trade["quantity"] * trade["price"] - trade["fee"]
++                shares -= trade["quantity"]
++        nav = cash + shares * bar["close"]
++        residual = max(abs(cash-day["cash"]),abs(shares-day["shares"]),abs(nav-day["equity"]))
++        max_residual = max(max_residual,residual)
++        assert cash >= -1e-8 and shares >= 0 and residual < 1e-6
++    assert abs(nav-result["metrics"]["ending_equity"]) < 1e-6
++    print(json.dumps({"status":"passed","days_reconstructed":len(result["daily"]),"fills_reconstructed":len(fills),
++                      "ending_equity":nav,"max_absolute_residual":max_residual},indent=2))
++
++
++if __name__ == "__main__":main()
+diff --git a/scripts/demo_local_evidence.py b/scripts/demo_local_evidence.py
+new file mode 100644
+index 0000000..b91fd66
+--- /dev/null
++++ b/scripts/demo_local_evidence.py
+@@ -0,0 +1,96 @@
++"""Reproduce local evidence preconditions in a NEW isolated directory.
++
++This deliberately does not claim any CIO state transitions or downstream checks.
++"""
++import argparse
++from copy import deepcopy
++from dataclasses import replace
++from pathlib import Path
++import shutil
++import sys
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++sys.path.insert(0, str(ROOT / "tests"))
++from fixtures import sample
++from etf_lab.artifacts import EvidenceError, execute, inputs, read_json, verify, write_new
++
++
++def main():
++    parser = argparse.ArgumentParser()
++    parser.add_argument("--output", type=Path, required=True)
++    args = parser.parse_args()
++    if args.output.exists():
++        raise SystemExit("Use a new isolated output directory; history is never overwritten")
++    snapshot, cfg = sample()
++    source = args.output / "fixtures/spy.json"
++    write_new(source, snapshot)
++    write_new(args.output / "fixtures/config.json", cfg.to_dict())
++    records = []
++
++    def rejected(label, action):
++        try: action()
++        except EvidenceError as exc:
++            records.append({"case":label,"assertion":"PASS_LOCAL_ONLY","refusal":str(exc)})
++            return
++        raise AssertionError(label + " was not rejected")
++
++    def expected(path, config):
++        frozen = inputs(path, config)[0]
++        frozen["simulated_fault"] = None
++        return frozen
++
++    before = execute(source, cfg, "original", args.output)
++    assert before["status"] == "succeeded"
++    original_dir = args.output / "runs/original"
++    original_bytes = (original_dir / "result.json").read_bytes()
++    for name, altered in (("parameter", replace(cfg, fast=1)), ("fees", replace(cfg, fee_fixed=1))):
++        rejected("scenario_1_"+name, lambda:verify(original_dir, expected(source, altered)))
++        after = execute(source, altered, name, args.output)
++        assert after["input_id"] != before["input_id"] and after["status"] == "succeeded"
++        records.append({"case":name+"_rerun","old_input_id":before["input_id"],"new_input_id":after["input_id"],"new_result_id":after["result_id"]})
++    for name in ("snapshot", "provider"):
++        altered = deepcopy(snapshot)
++        if name == "snapshot": altered["bars"][0]["volume"] += 1
++        else: altered["source"] = "SIMULATED_OTHER_PROVIDER"
++        path = args.output / f"fixtures/{name}.json"
++        write_new(path,altered)
++        rejected("scenario_1_"+name, lambda:verify(original_dir, expected(path,cfg)))
++        after = execute(path,cfg,name,args.output)
++        assert after["input_id"] != before["input_id"] and after["status"] == "succeeded"
++        records.append({"case":name+"_rerun","same_url":altered["source_url"]==snapshot["source_url"],
++                        "old_input_id":before["input_id"],"new_input_id":after["input_id"],"new_result_id":after["result_id"]})
++    assert (original_dir/"result.json").read_bytes() == original_bytes
++    verify(original_dir)
++    for fault in ("data", "compute"):
++        failed = execute(source,cfg,"failure-"+fault,args.output,fault)
++        assert failed["status"] == "failed" and failed["simulated"]
++        assert not (args.output/f"runs/failure-{fault}/result.json").exists()
++        rejected("scenario_2_failed_"+fault,lambda:verify(args.output/f"runs/failure-{fault}"))
++        recovered = execute(source,cfg,"recovery-"+fault,args.output)
++        assert recovered["status"] == "succeeded"
++        assert read_json(args.output/f"runs/failure-{fault}/receipt.json")["status"] == "failed"
++        records.append({"case":"scenario_2_recovery_"+fault,"failure":failed,"recovery":recovered})
++    first = execute(source,cfg,"repeat",args.output)
++    second = execute(source,cfg,"repeat",args.output)
++    assert second["reused"] and first["result_id"] == second["result_id"]
++    assert len(list((args.output/"runs/repeat").glob("result.json"))) == 1
++    records.append({"case":"scenario_3_idempotency","business_results_for_key":1,"calls_for_key":2,"second_action":"reused_succeeded"})
++    rejected("scenario_3_key_conflict",lambda:execute(source,replace(cfg,fee_fixed=2),"repeat",args.output))
++    fresh = execute(source,cfg,"explicit-recompute",args.output)
++    assert fresh["result_id"] == first["result_id"] and fresh["run_id"] != first["run_id"]
++    tampered = args.output/"tampered-copy/original"
++    shutil.copytree(original_dir,tampered)
++    (tampered/"result.json").write_text('{"tampered":true}',encoding="utf-8")
++    rejected("scenario_3_integrity",lambda:verify(tampered))
++    verify(original_dir)
++    summary = {"scope":"Local backtest artifact preconditions only; CIO NOT integrated", "simulated_data":True,
++               "status":"passed_local_prerequisites", "cio_acceptance":"PENDING_ORIGINAL_CIO_REPOSITORY",
++               "records":records, "successful_business_results":len(list((args.output/"runs").glob("*/result.json"))),
++               "failed_runs":2, "history_preserved":True}
++    write_new(args.output/"summary.json",summary)
++    import json
++    print(json.dumps(summary,ensure_ascii=True,indent=2))
++
++
++if __name__ == "__main__": main()
+diff --git a/tests/fixtures.py b/tests/fixtures.py
+new file mode 100644
+index 0000000..cc88132
+--- /dev/null
++++ b/tests/fixtures.py
+@@ -0,0 +1,27 @@
++from copy import deepcopy
++from dataclasses import replace
++from datetime import date, timedelta
++
++from etf_lab.engine import Config
++
++
++def sample():
++    closes = [10, 10, 10, 9, 8, 12, 14, 14, 10, 8, 8, 8]
++    days = [(date(2020, 1, 1) + timedelta(days=i)).isoformat() for i in range(len(closes))]
++    bars = [{"date": d, "open": float(c), "high": float(c), "low": float(c), "close": float(c),
++             "volume": 1000000.0, "dividend": 0.0, "split": 1.0} for d, c in zip(days, closes)]
++    snapshot = {"schema": "etf-bars-v1", "symbol": "SPY", "source": "SIMULATED_FIXTURE",
++                "source_url": "fixture://spy-hand-calculation-v1", "observed_at": "2020-02-01T00:00:00+00:00",
++                "data_cutoff": days[-1], "coverage": {"start": days[0], "end_inclusive": days[-1]},
++                "price_basis": "Synthetic as-traded prices; calendar intentionally artificial",
++                "calendar": "Explicit artificial daily sessions for unit tests, NOT NYSE",
++                "expected_sessions": days, "bars": bars, "synthetic": True}
++    config = Config(fast=2, slow=3, adv_window=2, start=days[4], end=days[-1],
++                    initial_cash=1000.0, fee_fixed=0, slippage_bps=0, impact_bps=0)
++    return snapshot, config
++
++
++def change_price(bar, **kwargs):
++    bar.update(kwargs)
++    bar["high"] = max(bar["open"], bar["close"])
++    bar["low"] = min(bar["open"], bar["close"])
+diff --git a/tests/test_artifacts.py b/tests/test_artifacts.py
+new file mode 100644
+index 0000000..8741785
+--- /dev/null
++++ b/tests/test_artifacts.py
+@@ -0,0 +1,142 @@
++from copy import deepcopy
++from dataclasses import replace
++from pathlib import Path
++import tempfile
++import unittest
++from unittest.mock import patch
++
++from etf_lab.artifacts import EvidenceError, execute, inputs, read_json, verify, write_new
++from fixtures import sample
++
++
++def lightweight_report(directory, *args):
++    # Test-only substitute for a costly renderer. Financial calculations are real.
++    (directory / "report.html").write_text("<p>TEST RENDERER ONLY</p>")
++    (directory / "nav.png").write_bytes(b"TEST-PNG-PLACEHOLDER")
++
++
++class LocalArtifactPrerequisites(unittest.TestCase):
++    """These assert local evidence behavior, NOT the missing CIO integration."""
++    def setUp(self):
++        self.temp = tempfile.TemporaryDirectory()
++        self.root = Path(self.temp.name)
++        self.snapshot, self.cfg = sample()
++        self.source = self.root / "snapshot.json"
++        write_new(self.source, self.snapshot)
++        self.out = self.root / "output"
++        self.render = patch("etf_lab.report.render", lightweight_report)
++        self.render.start()
++
++    def tearDown(self):
++        self.render.stop()
++        self.temp.cleanup()
++
++    def expected(self, source=None, cfg=None, fault=None):
++        frozen = inputs(source or self.source, cfg or self.cfg)[0]
++        frozen["simulated_fault"] = fault
++        return frozen
++
++    def test_parameter_and_fee_changes_block_old_result_keep_history(self):
++        old = execute(self.source, self.cfg, "v1", self.out)
++        folder = self.out / "runs/v1"
++        original_bytes = (folder / "result.json").read_bytes()
++        for i, cfg in enumerate((replace(self.cfg, fast=1), replace(self.cfg, fee_fixed=1))):
++            with self.assertRaisesRegex(EvidenceError,"INPUT_MISMATCH"):
++                verify(folder, self.expected(cfg=cfg))
++            new = execute(self.source, cfg, f"v{i+2}", self.out)
++            self.assertNotEqual(old["input_id"], new["input_id"])
++            self.assertEqual(verify(self.out/f"runs/v{i+2}", self.expected(cfg=cfg))["status"], "succeeded")
++        self.assertEqual((folder/"result.json").read_bytes(), original_bytes)
++        self.assertEqual(verify(folder)["status"], "succeeded")
++
++    def test_same_url_changed_snapshot_or_source_blocks_old_result(self):
++        old = execute(self.source, self.cfg, "v1", self.out)
++        for name, mutate in (("data", lambda s:s["bars"][0].update(volume=2)),
++                             ("provider", lambda s:s.update(source="SIMULATED_OTHER_PROVIDER"))):
++            changed = deepcopy(self.snapshot)
++            mutate(changed)
++            path = self.root / (name + ".json")
++            write_new(path, changed)
++            with self.assertRaisesRegex(EvidenceError,"INPUT_MISMATCH"):
++                verify(self.out/"runs/v1", self.expected(source=path))
++            new = execute(path, self.cfg, name, self.out)
++            self.assertNotEqual(old["input_id"], new["input_id"])
++
++    def test_code_identity_changes_invalidate_current_eligibility(self):
++        execute(self.source, self.cfg, "v1", self.out)
++        with patch("etf_lab.artifacts.code_identity", return_value={"source_digest":"changed-code"}):
++            with self.assertRaisesRegex(EvidenceError,"INPUT_MISMATCH"):
++                verify(self.out/"runs/v1", self.expected())
++        self.assertEqual(verify(self.out/"runs/v1")["status"], "succeeded")
++
++    def test_simulated_failures_do_not_reuse_success_and_recovery_is_new_run(self):
++        success = execute(self.source, self.cfg, "old-success", self.out)
++        for fault in ("data", "compute"):
++            failed = execute(self.source, self.cfg, "failure-"+fault, self.out, fault)
++            folder = self.out / ("runs/failure-"+fault)
++            self.assertEqual(failed["status"], "failed")
++            self.assertTrue(failed["simulated"])
++            self.assertTrue(failed["reason"].startswith("SIMULATED:"))
++            self.assertNotIn("result_id", failed)
++            self.assertFalse((folder/"result.json").exists())
++            with self.assertRaisesRegex(EvidenceError,"RUN_NOT_SUCCEEDED"): verify(folder)
++            recovered = execute(self.source, self.cfg, "recovery-"+fault, self.out)
++            self.assertEqual(recovered["status"], "succeeded")
++            self.assertEqual(recovered["result_id"], success["result_id"])
++            self.assertTrue((folder/"receipt.json").exists())
++
++    def test_same_id_same_input_reuses_one_business_result(self):
++        first = execute(self.source, self.cfg, "repeat", self.out)
++        second = execute(self.source, self.cfg, "repeat", self.out)
++        self.assertTrue(second["reused"])
++        self.assertEqual(first["result_id"], second["result_id"])
++        self.assertEqual(len(list(self.out.glob("runs/*/result.json"))), 1)
++        calls = (self.out/"calls.jsonl").read_text().splitlines()
++        self.assertEqual(len(calls), 2)
++        self.assertIn("reused_succeeded", calls[-1])
++
++    def test_same_id_different_input_conflicts_without_overwrite(self):
++        execute(self.source, self.cfg, "repeat", self.out)
++        original = (self.out/"runs/repeat/input.json").read_bytes()
++        with self.assertRaisesRegex(EvidenceError,"INPUT_MISMATCH"):
++            execute(self.source, replace(self.cfg, fee_fixed=2), "repeat", self.out)
++        self.assertEqual((self.out/"runs/repeat/input.json").read_bytes(), original)
++
++    def test_tampering_with_result_is_rejected_and_not_reused(self):
++        execute(self.source, self.cfg, "original", self.out)
++        path = self.out/"runs/original/result.json"
++        path.write_text('{"metrics":{"total_return":99}}')
++        with self.assertRaisesRegex(EvidenceError,"INTEGRITY_MISMATCH"): verify(path.parent)
++        with self.assertRaises(EvidenceError): execute(self.source, self.cfg, "original", self.out)
++
++    def test_missing_evidence_or_incomplete_run_cannot_pass(self):
++        execute(self.source, self.cfg, "original", self.out)
++        (self.out/"runs/original/report.html").unlink()
++        with self.assertRaisesRegex(EvidenceError,"ARTIFACT_SET_MISMATCH"): verify(self.out/"runs/original")
++        (self.out/"runs/aborted").mkdir()
++        with self.assertRaises(EvidenceError): execute(self.source, self.cfg, "aborted", self.out)
++
++    def test_error_output_does_not_store_sensitive_exception_content(self):
++        secret = "secret-test-value-abcdef"
++        with patch("etf_lab.artifacts.run_backtest", side_effect=RuntimeError("https://example.test?api_key="+secret)):
++            failed = execute(self.source, self.cfg, "secret-check", self.out)
++        self.assertEqual(failed["failed_stage"], "calculation")
++        for path in self.out.rglob("*"):
++            if path.is_file(): self.assertNotIn(secret.encode(), path.read_bytes())
++
++    def test_report_failure_is_failed_even_with_partial_chart(self):
++        def fail_render(directory,*args):
++            (directory/"nav.png").write_bytes(b"partial")
++            raise RuntimeError("SIMULATED_RENDER_FAILURE")
++        with patch("etf_lab.report.render", fail_render):
++            failed = execute(self.source, self.cfg, "render-failure", self.out)
++        self.assertEqual(failed["status"], "failed")
++        self.assertEqual(failed["failed_stage"], "report")
++        with self.assertRaises(EvidenceError): verify(self.out/"runs/render-failure")
++
++    def test_path_traversal_run_id_rejected(self):
++        with self.assertRaisesRegex(EvidenceError,"INVALID_RUN_ID"):
++            execute(self.source, self.cfg, "../escape", self.out)
++
++
++if __name__ == "__main__": unittest.main()
+diff --git a/tests/test_data.py b/tests/test_data.py
+new file mode 100644
+index 0000000..4545b57
+--- /dev/null
++++ b/tests/test_data.py
+@@ -0,0 +1,45 @@
++from datetime import date
++from pathlib import Path
++import tempfile
++import unittest
++from unittest.mock import patch
++
++from etf_lab.data import download_spy
++from etf_lab.engine import DataError
++
++
++class ProviderNormalization(unittest.TestCase):
++    def frame(self):
++        import pandas as pd
++        return pd.DataFrame({"Open":[10.,11.],"High":[10.,11.],"Low":[10.,11.],"Close":[10.,11.],
++                             "Adj Close":[9.,10.],"Volume":[100,200],"Dividends":[0.,0.],"Stock Splits":[0.,0.]},
++                            index=pd.DatetimeIndex(["2020-01-02","2020-01-03"],tz="America/New_York"))
++
++    def test_holiday_date_range_uses_correct_calendar_bounds(self):
++        with tempfile.TemporaryDirectory() as root, patch("yfinance.Ticker.history", return_value=self.frame()):
++            result = download_spy("2020-01-01","2020-01-04",Path(root))
++        self.assertEqual(result["expected_sessions"],["2020-01-02","2020-01-03"])
++        self.assertEqual(result["bars"][0]["close"],10)
++        self.assertEqual(result["provider_rows"][0]["Adj Close"],9)
++
++    def test_provider_missing_session_is_not_silently_removed(self):
++        frame = self.frame().iloc[:1]
++        with tempfile.TemporaryDirectory() as root, patch("yfinance.Ticker.history", return_value=frame):
++            with self.assertRaisesRegex(DataError,"COVERAGE_MISMATCH"):
++                download_spy("2020-01-01","2020-01-04",Path(root))
++
++    def test_split_adjusted_vendor_data_requires_explicit_conversion(self):
++        frame = self.frame()
++        frame.loc[frame.index[1],"Stock Splits"] = 2
++        with tempfile.TemporaryDirectory() as root, patch("yfinance.Ticker.history", return_value=frame):
++            with self.assertRaisesRegex(DataError,"AS_TRADED_NORMALIZATION"):
++                download_spy("2020-01-01","2020-01-04",Path(root))
++
++    def test_provider_exception_is_redacted(self):
++        with tempfile.TemporaryDirectory() as root, patch("yfinance.Ticker.history", side_effect=RuntimeError("api_key=SECRET_VALUE")):
++            with self.assertRaises(DataError) as ctx:
++                download_spy("2020-01-01","2020-01-04",Path(root))
++        self.assertNotIn("SECRET_VALUE",str(ctx.exception))
++
++
++if __name__ == "__main__": unittest.main()
+diff --git a/tests/test_engine.py b/tests/test_engine.py
+new file mode 100644
+index 0000000..c9aad96
+--- /dev/null
++++ b/tests/test_engine.py
+@@ -0,0 +1,150 @@
++from copy import deepcopy
++from dataclasses import replace
++import math
++import unittest
++
++from etf_lab.engine import Config, DataError, affordable, metrics, quote, run_backtest, signal_series
++from fixtures import sample, change_price
++
++
++class FinancialAcceptance(unittest.TestCase):
++    def test_hand_calculated_round_trip_and_cash(self):
++        snapshot, cfg = sample()
++        result = run_backtest(snapshot, cfg)
++        # Day 6 close crosses up; 71 shares at day 7 open $14; $6 cash.
++        # Day 9 close crosses down; sell at day 10 open $8; loss $426.
++        self.assertEqual([(t["date"], t["side"], t["quantity"], t["price"]) for t in result["trades"]],
++                         [("2020-01-07", "BUY", 71, 14), ("2020-01-10", "SELL", 71, 8)])
++        self.assertEqual(result["trades"][0]["cash_after"], 6)
++        self.assertEqual(result["trades"][1]["realized_pnl"], -426)
++        self.assertAlmostEqual(result["metrics"]["total_return"], -.426)
++        self.assertEqual(result["metrics"]["round_trip_count"], 1)
++        self.assertEqual(result["metrics"]["win_rate"], 0)
++        self.assertAlmostEqual(result["pnl_reconciliation_residual"], 0)
++
++    def test_gap_fills_next_open_not_signal_close(self):
++        snapshot, cfg = sample()
++        change_price(snapshot["bars"][6], open=20.0)
++        result = run_backtest(snapshot, cfg)
++        buy = result["trades"][0]
++        self.assertEqual(buy["signal_date"], "2020-01-06")
++        self.assertEqual(buy["date"], "2020-01-07")
++        self.assertEqual(buy["price"], 20)
++        self.assertEqual(buy["quantity"], 50)
++        self.assertEqual(result["daily"][2]["equity"], 700)
++        self.assertAlmostEqual(result["metrics"]["total_return"], -.60)
++
++    def test_split_preserves_wealth_and_signal_continuity(self):
++        snapshot, cfg = sample()
++        original = run_backtest(snapshot, cfg)
++        # 2-for-1 on day 8, while holding. Equivalent path must have same PnL.
++        snapshot["bars"][7]["split"] = 2.0
++        for bar in snapshot["bars"][7:]:
++            for key in ("open", "high", "low", "close"): bar[key] /= 2
++            bar["volume"] *= 2
++        result = run_backtest(snapshot, cfg)
++        self.assertEqual(result["trades"][1]["quantity"], 142)
++        self.assertEqual(result["daily"][3]["equity"], original["daily"][3]["equity"])
++        self.assertAlmostEqual(result["metrics"]["total_return"], original["metrics"]["total_return"])
++        self.assertEqual([s["action"] for s in signal_series(sample()[0]["bars"], cfg)],
++                         [s["action"] for s in signal_series(snapshot["bars"], cfg)])
++
++    def test_dividend_credited_once_to_prior_holders(self):
++        snapshot, cfg = sample()
++        snapshot["bars"][7]["dividend"] = 1.0
++        for bar in snapshot["bars"][7:]:
++            change_price(bar, open=bar["open"]-1, close=bar["close"]-1)
++        # Adj Close is intentionally nonsense: engine cannot use it as money.
++        for bar in snapshot["bars"]: bar["adj_close"] = 99999
++        result = run_backtest(snapshot, cfg)
++        self.assertEqual(result["dividend_income"], 71)
++        self.assertEqual(result["daily"][3]["equity"], 1000)
++        self.assertEqual(result["trades"][1]["realized_pnl"], -426)
++
++    def test_ex_date_buyer_has_no_distribution_entitlement(self):
++        snapshot, cfg = sample()
++        snapshot["bars"][6]["dividend"] = 1.0
++        result = run_backtest(snapshot, cfg)
++        self.assertEqual(result["dividend_income"], 0)
++
++    def test_fees_slippage_and_impact_are_not_double_counted(self):
++        snapshot, cfg = sample()
++        cfg = replace(cfg, fee_fixed=1, fee_bps=10, slippage_bps=5, impact_bps=10, impact_threshold=0)
++        result = run_backtest(snapshot, cfg)
++        buy, sell = result["trades"]
++        buy_price, sell_price = 14 * 1.0015, 8 * .9985
++        self.assertEqual(buy["quantity"], 71)
++        expected = 1000 - 71*buy_price - (1 + 71*buy_price*.001) + 71*sell_price - (1 + 71*sell_price*.001)
++        self.assertAlmostEqual(result["metrics"]["ending_equity"], expected)
++        self.assertAlmostEqual(result["cost_totals"]["impact_cost"], 71*(14+8)*.001)
++        self.assertAlmostEqual(result["cost_totals"]["slippage_cost"], 71*(14+8)*.0005)
++
++    def test_missing_session_rejected_instead_of_forward_filled(self):
++        snapshot, cfg = sample()
++        del snapshot["bars"][7]
++        with self.assertRaisesRegex(DataError, "Missing or extra"):
++            run_backtest(snapshot, cfg)
++
++    def test_nan_duplicate_and_short_coverage_rejected(self):
++        snapshot, cfg = sample()
++        snapshot["bars"][5]["close"] = float("nan")
++        with self.assertRaises(DataError): run_backtest(snapshot, cfg)
++        snapshot, cfg = sample()
++        snapshot["bars"][5]["date"] = snapshot["bars"][4]["date"]
++        with self.assertRaises(DataError): run_backtest(snapshot, cfg)
++        snapshot, cfg = sample()
++        with self.assertRaisesRegex(DataError,"full requested"):
++            run_backtest(snapshot, replace(cfg, end="2020-01-20"))
++
++    def test_insufficient_cash_rejects_order_without_negative_cash(self):
++        snapshot, cfg = sample()
++        result = run_backtest(snapshot, replace(cfg, initial_cash=14, fee_fixed=1))
++        self.assertEqual(result["trades"], [])
++        self.assertEqual(result["rejected_orders"][0]["reason"], "INSUFFICIENT_CASH")
++        self.assertTrue(all(r["cash"] == 14 and r["shares"] == 0 for r in result["daily"]))
++        self.assertIsNone(result["metrics"]["win_rate"])
++        self.assertIsNone(result["metrics"]["sharpe"])
++
++    def test_future_prices_and_volume_do_not_change_prior_orders(self):
++        snapshot, cfg = sample()
++        before = run_backtest(snapshot, cfg)
++        for bar in snapshot["bars"][7:]:
++            change_price(bar, open=bar["open"]*100, close=bar["close"]*100)
++            bar["volume"] = 1
++        after = run_backtest(snapshot, cfg)
++        self.assertEqual(before["trades"][0], after["trades"][0])
++        self.assertEqual(before["daily"][:3], after["daily"][:3])
++
++    def test_execution_day_volume_does_not_leak_into_impact(self):
++        snapshot, cfg = sample()
++        cfg = replace(cfg, impact_threshold=.00001, impact_bps=20)
++        original = run_backtest(snapshot, cfg)["trades"][0]
++        snapshot["bars"][6]["volume"] = 10**15
++        self.assertEqual(original, run_backtest(snapshot, cfg)["trades"][0])
++
++    def test_affordable_matches_independent_enumeration_across_impact_threshold(self):
++        _, cfg = sample()
++        cfg = replace(cfg, fee_fixed=1, fee_bps=3, impact_threshold=.2, impact_bps=100, slippage_bps=10)
++        for cash in (10, 21, 100, 101, 105, 500):
++            feasible = [q for q in range(int(cash/10)+1) if q == 0 or -quote("BUY",q,10,500,cfg)["cash_change"] <= cash]
++            self.assertEqual(affordable(cash,10,500,cfg), max(feasible))
++
++    def test_terminal_position_is_marked_not_artificially_sold(self):
++        snapshot, cfg = sample()
++        result = run_backtest(snapshot, replace(cfg, end="2020-01-08"))
++        self.assertEqual(len(result["trades"]), 1)
++        self.assertEqual(result["open_shares"], 71)
++        self.assertEqual(result["metrics"]["round_trip_count"], 0)
++        self.assertAlmostEqual(result["pnl_reconciliation_residual"], 0)
++
++    def test_drawdown_includes_initial_capital(self):
++        _, cfg = sample()
++        result = metrics([{"equity":80},{"equity":90}], 100, cfg, [], 0)
++        self.assertAlmostEqual(result["max_drawdown"], -.20)
++
++    def test_config_rejects_nonsensical_inputs(self):
++        for change in ({"fast":50}, {"fee_fixed":-1}, {"slow":True}, {"initial_cash":0}, {"impact_bps":10000}):
++            with self.subTest(change=change), self.assertRaises(ValueError): Config(**change)
++
++
++if __name__ == "__main__": unittest.main()

@@ -1,0 +1,139 @@
+{
+  "cio_acceptance": "PENDING_ORIGINAL_CIO_REPOSITORY",
+  "failed_runs": 2,
+  "history_preserved": true,
+  "records": [
+    {
+      "assertion": "PASS_LOCAL_ONLY",
+      "case": "scenario_1_parameter",
+      "refusal": "INPUT_MISMATCH: result remains historical evidence only"
+    },
+    {
+      "case": "parameter_rerun",
+      "new_input_id": "ac5e3319bfceea4ea6d42aa0a99fb90429702ff2fc360757323292e4a7e94f14",
+      "new_result_id": "874955163ee6dcce141fc29ec90e4034b1a93c152164c34407020f4a007d35ae",
+      "old_input_id": "996c5e82bbb3b45ccf9b3d78863f5a4dd8c1765cda2ebfae6d6fc89f3b4f2a00"
+    },
+    {
+      "assertion": "PASS_LOCAL_ONLY",
+      "case": "scenario_1_fees",
+      "refusal": "INPUT_MISMATCH: result remains historical evidence only"
+    },
+    {
+      "case": "fees_rerun",
+      "new_input_id": "e24a99cdf25677cd7321366cdec3d7ba95362741ea3b61735cc9379da83e6c69",
+      "new_result_id": "59305f6f87ad850971ed2cf8e86588c7b94799040f85609768369dddcb3252c7",
+      "old_input_id": "996c5e82bbb3b45ccf9b3d78863f5a4dd8c1765cda2ebfae6d6fc89f3b4f2a00"
+    },
+    {
+      "assertion": "PASS_LOCAL_ONLY",
+      "case": "scenario_1_snapshot",
+      "refusal": "INPUT_MISMATCH: result remains historical evidence only"
+    },
+    {
+      "case": "snapshot_rerun",
+      "new_input_id": "5fc14e71a1caf5e3fc34025b59e60485dbfbfcf87ab797a73b0762e8ece6212d",
+      "new_result_id": "c31bca625cfb895f8cf2ce18a633a9524fd73d83f1d8fde12968630fd64b1ae6",
+      "old_input_id": "996c5e82bbb3b45ccf9b3d78863f5a4dd8c1765cda2ebfae6d6fc89f3b4f2a00",
+      "same_url": true
+    },
+    {
+      "assertion": "PASS_LOCAL_ONLY",
+      "case": "scenario_1_provider",
+      "refusal": "INPUT_MISMATCH: result remains historical evidence only"
+    },
+    {
+      "case": "provider_rerun",
+      "new_input_id": "ccf4178fa14db5f2666e66d6ba2a2e655c20c24faf12faeb9dcc9a4355468d5c",
+      "new_result_id": "c31bca625cfb895f8cf2ce18a633a9524fd73d83f1d8fde12968630fd64b1ae6",
+      "old_input_id": "996c5e82bbb3b45ccf9b3d78863f5a4dd8c1765cda2ebfae6d6fc89f3b4f2a00",
+      "same_url": true
+    },
+    {
+      "assertion": "PASS_LOCAL_ONLY",
+      "case": "scenario_2_failed_data",
+      "refusal": "RUN_NOT_SUCCEEDED: DATA_UNAVAILABLE_OR_INVALID"
+    },
+    {
+      "case": "scenario_2_recovery_data",
+      "failure": {
+        "cio_integration": "pending_original_repository",
+        "created_at": "2026-10-16T14:32:55.140711+00:00",
+        "error_code": "DATA_UNAVAILABLE_OR_INVALID",
+        "exception_type": "DataError",
+        "failed_stage": "data_validation",
+        "input_id": "20ab16bcceb1e5887f669920e5472c3d7f76698d7ca311ac810df6d2973aafa4",
+        "reason": "SIMULATED: Data acquisition/validation did not produce usable input.",
+        "run_id": "failure-data",
+        "schema": "etf-result-receipt-v1",
+        "scope": "local_research_only",
+        "simulated": true,
+        "status": "failed"
+      },
+      "recovery": {
+        "cio_integration": "pending_original_repository",
+        "created_at": "2026-10-16T14:32:55.248890+00:00",
+        "input_id": "996c5e82bbb3b45ccf9b3d78863f5a4dd8c1765cda2ebfae6d6fc89f3b4f2a00",
+        "result_id": "c31bca625cfb895f8cf2ce18a633a9524fd73d83f1d8fde12968630fd64b1ae6",
+        "run_id": "recovery-data",
+        "schema": "etf-result-receipt-v1",
+        "scope": "local_research_only",
+        "simulated": false,
+        "status": "succeeded"
+      }
+    },
+    {
+      "assertion": "PASS_LOCAL_ONLY",
+      "case": "scenario_2_failed_compute",
+      "refusal": "RUN_NOT_SUCCEEDED: CALCULATION_FAILED"
+    },
+    {
+      "case": "scenario_2_recovery_compute",
+      "failure": {
+        "cio_integration": "pending_original_repository",
+        "created_at": "2026-10-16T14:32:55.546179+00:00",
+        "error_code": "CALCULATION_FAILED",
+        "exception_type": "ArithmeticError",
+        "failed_stage": "calculation",
+        "input_id": "a6d934f119cf640165a239c49be5bfc327ed3dfee9264ca4f674891436b43c10",
+        "reason": "SIMULATED: Calculation did not complete; no successful result is available.",
+        "run_id": "failure-compute",
+        "schema": "etf-result-receipt-v1",
+        "scope": "local_research_only",
+        "simulated": true,
+        "status": "failed"
+      },
+      "recovery": {
+        "cio_integration": "pending_original_repository",
+        "created_at": "2026-10-16T14:32:55.663667+00:00",
+        "input_id": "996c5e82bbb3b45ccf9b3d78863f5a4dd8c1765cda2ebfae6d6fc89f3b4f2a00",
+        "result_id": "c31bca625cfb895f8cf2ce18a633a9524fd73d83f1d8fde12968630fd64b1ae6",
+        "run_id": "recovery-compute",
+        "schema": "etf-result-receipt-v1",
+        "scope": "local_research_only",
+        "simulated": false,
+        "status": "succeeded"
+      }
+    },
+    {
+      "business_results_for_key": 1,
+      "calls_for_key": 2,
+      "case": "scenario_3_idempotency",
+      "second_action": "reused_succeeded"
+    },
+    {
+      "assertion": "PASS_LOCAL_ONLY",
+      "case": "scenario_3_key_conflict",
+      "refusal": "INPUT_MISMATCH: result remains historical evidence only"
+    },
+    {
+      "assertion": "PASS_LOCAL_ONLY",
+      "case": "scenario_3_integrity",
+      "refusal": "INTEGRITY_MISMATCH: result.json"
+    }
+  ],
+  "scope": "Local backtest artifact preconditions only; CIO NOT integrated",
+  "simulated_data": true,
+  "status": "passed_local_prerequisites",
+  "successful_business_results": 9
+}

@@ -1,0 +1,11 @@
+{
+  "cio_integration": "pending_original_repository",
+  "created_at": "2026-10-16T14:32:53.789287+00:00",
+  "input_id": "ac5e3319bfceea4ea6d42aa0a99fb90429702ff2fc360757323292e4a7e94f14",
+  "result_id": "874955163ee6dcce141fc29ec90e4034b1a93c152164c34407020f4a007d35ae",
+  "run_id": "parameter",
+  "schema": "etf-result-receipt-v1",
+  "scope": "local_research_only",
+  "simulated": false,
+  "status": "succeeded"
+}

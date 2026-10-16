@@ -1,0 +1,26 @@
+test_cash_zero_and_holdings_drift_without_unrequested_trades (test_core.BenchmarkTests.test_cash_zero_and_holdings_drift_without_unrequested_trades) ... ok
+test_cost_fixed_point_accounts_for_invested_capital (test_core.BenchmarkTests.test_cost_fixed_point_accounts_for_invested_capital) ... ok
+test_execution_occurs_after_signal_and_costs_are_charged (test_core.BenchmarkTests.test_execution_occurs_after_signal_and_costs_are_charged) ... ok
+test_future_changes_do_not_change_prior_decision_inputs (test_core.BenchmarkTests.test_future_changes_do_not_change_prior_decision_inputs) ... ok
+test_hac_recovers_known_factor_exposure (test_core.BenchmarkTests.test_hac_recovers_known_factor_exposure) ... ok
+test_invalid_llm_decisions_are_counted_and_go_to_cash (test_core.BenchmarkTests.test_invalid_llm_decisions_are_counted_and_go_to_cash) ... ok
+test_weights_reject_leverage_short_nan_and_invented_symbol (test_core.BenchmarkTests.test_weights_reject_leverage_short_nan_and_invented_symbol) ... ok
+test_artifact_hash_is_order_invariant (test_core.DatasetTests.test_artifact_hash_is_order_invariant) ... ok
+test_gold_self_consistency_and_numeric_type (test_core.DatasetTests.test_gold_self_consistency_and_numeric_type) ... ok
+test_schema_rejects_invalid_enum_and_number_types (test_core.DatasetTests.test_schema_rejects_invalid_enum_and_number_types) ... ok
+test_splits_never_share_groups_or_paraphrases (test_core.DatasetTests.test_splits_never_share_groups_or_paraphrases) ... ok
+test_atom_article_not_image_enclosure (test_core.EvidenceTests.test_atom_article_not_image_enclosure) ... ok
+test_complete_tool_loop_with_grounded_final_answer (test_core.EvidenceTests.test_complete_tool_loop_with_grounded_final_answer) ... ok
+test_explicit_asof_never_fetches_fresh_fundamentals (test_core.EvidenceTests.test_explicit_asof_never_fetches_fresh_fundamentals) ... ok
+test_first_seen_prevents_historical_leakage (test_core.EvidenceTests.test_first_seen_prevents_historical_leakage) ... ok
+test_future_publication_excluded (test_core.EvidenceTests.test_future_publication_excluded) ... ok
+test_quote_and_id_validation_not_semantic_entailment (test_core.EvidenceTests.test_quote_and_id_validation_not_semantic_entailment) ... ok
+test_revisions_are_immutable_and_asof (test_core.EvidenceTests.test_revisions_are_immutable_and_asof) ... ok
+test_unknown_tools_and_unsafe_calculator_rejected (test_core.EvidenceTests.test_unknown_tools_and_unsafe_calculator_rejected) ... ok
+test_historical_rows_are_copied_without_fabrication_or_duplicate_snapshots (test_showcase.ShowcaseTests.test_historical_rows_are_copied_without_fabrication_or_duplicate_snapshots) ... ok
+test_synthetic_users_are_deterministic_unique_and_isolated (test_showcase.ShowcaseTests.test_synthetic_users_are_deterministic_unique_and_isolated) ... ok
+
+----------------------------------------------------------------------
+Ran 21 tests in 0.566s
+
+OK

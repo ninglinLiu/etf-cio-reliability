@@ -1,0 +1,11 @@
+{
+  "cio_integration": "pending_original_repository",
+  "created_at": "2026-10-16T14:32:55.248890+00:00",
+  "input_id": "996c5e82bbb3b45ccf9b3d78863f5a4dd8c1765cda2ebfae6d6fc89f3b4f2a00",
+  "result_id": "c31bca625cfb895f8cf2ce18a633a9524fd73d83f1d8fde12968630fd64b1ae6",
+  "run_id": "recovery-data",
+  "schema": "etf-result-receipt-v1",
+  "scope": "local_research_only",
+  "simulated": false,
+  "status": "succeeded"
+}

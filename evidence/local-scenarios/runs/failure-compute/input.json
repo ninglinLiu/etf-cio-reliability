@@ -1,0 +1,50 @@
+{
+  "code": {
+    "calculation_commit": "11321ef7c1a62e766d937aaf760f2d94fd3cfe18",
+    "dependencies": {
+      "exchange-calendars": "4.13.2",
+      "matplotlib": "3.11.2",
+      "numpy": "2.4.6",
+      "pandas": "3.0.6",
+      "yfinance": "1.7.0"
+    },
+    "file_hashes": {
+      "etf_lab/__init__.py": "97ced3651cf207a4f78759444f7e5d6aba15e5b68ae395edb097e82d111a333d",
+      "etf_lab/__main__.py": "9c386a17af71d6a77eeb12bd3c560d8f550b89942c3355a00b46a9cb57ccf22d",
+      "etf_lab/artifacts.py": "a6955f0ae3a1c703df33840861e33be3f7b3a034a79b7531e3aeb180c6f88136",
+      "etf_lab/data.py": "ce325289da8960aceaaba52844f8f367df1e9b7222272e3bf100c15558f192cd",
+      "etf_lab/engine.py": "e7342da098c3e85bb86b97ba50a5acb613310bfdae6f4202df03858e197d8fb3",
+      "etf_lab/report.py": "04601cb98ffed57d98fd5083f73b8dadbff8aa9a2ba2e6299bf0a8ac4eacbece",
+      "pyproject.toml": "24b5ce08d6cbc677542e6a24735258daf36a247ac25717f4a0ce65d713d67fbb",
+      "requirements.lock.txt": "d9efce6e7398049913f1316f6e6e0125e06c8b4fc16e37773551a95b42a845c9"
+    },
+    "python": "3.11.9",
+    "source_digest": "0148a54427435907f8ab84e25a523a8393eadf070e21c8f5556fe68cc33634d4"
+  },
+  "data_cutoff": "2020-01-12",
+  "observed_at": "2020-02-01T00:00:00+00:00",
+  "price_basis": "Synthetic as-traded prices; calendar intentionally artificial",
+  "schema": "etf-input-v1",
+  "simulated_fault": "compute",
+  "snapshot_sha256": "90569c45a24dc1460d55ad0593414871ceaa26090652a522bbfedbe874822554",
+  "source": "SIMULATED_FIXTURE",
+  "source_url": "fixture://spy-hand-calculation-v1",
+  "strategy": {
+    "adv_window": 2,
+    "annualization": 252,
+    "dividend_policy": "cash_on_ex_date",
+    "end": "2020-01-12",
+    "fast": 2,
+    "fee_bps": 0.0,
+    "fee_fixed": 0,
+    "impact_bps": 0,
+    "impact_threshold": 0.01,
+    "initial_cash": 1000.0,
+    "risk_free_annual": 0.0,
+    "slippage_bps": 0,
+    "slow": 3,
+    "start": "2020-01-05",
+    "strategy_version": "spy-sma-cross-v1",
+    "terminal_policy": "mark_to_market"
+  }
+}

@@ -1,0 +1,281 @@
+{
+  "acceptance": {
+    "cio_scenarios": "PENDING_ORIGINAL_CIO_CONTRACT",
+    "existing_algorithm_comparison": "PENDING_ORIGINAL_ALGORITHM",
+    "institutional_replication": "PENDING_COMPARABLE_PRIMARY_BENCHMARK"
+  },
+  "conventions": {
+    "dividends": "Prior holders receive cash on ex-date (explicit simplifying assumption); no DRIP",
+    "execution": "Next session open; integer shares; no leverage; no partial fills or order carry",
+    "impact": "Order reference value / previous N sessions average daily traded value, strict threshold; not portfolio allocation fraction",
+    "prices": "As-traded OHLC; signal history adjusted for splits known by that close; no dividend adjustment",
+    "signal": "Strict crossing after close; equality holds prior position; initially cash; pre-period crossings ignored except previous-close order",
+    "terminal": "Mark open positions at last close; no fictional forced liquidation",
+    "win_rate": "Positive net PnL / closed round trips, including fees and received dividends; open positions excluded"
+  },
+  "corporate_actions": [],
+  "cost_totals": {
+    "fee": 2.0,
+    "impact_cost": 0.0,
+    "slippage_cost": 0.0
+  },
+  "daily": [
+    {
+      "cash": 1000.0,
+      "cash_before": 1000.0,
+      "cash_reconciliation_residual": 0.0,
+      "close": 8.0,
+      "date": "2020-01-05",
+      "dividend_cash": 0.0,
+      "equity": 1000.0,
+      "fast": 8.5,
+      "market_value": 0.0,
+      "open": 8.0,
+      "prior_adv_dollars": 9500000.0,
+      "shares": 0,
+      "shares_before": 0,
+      "signal_after_close": null,
+      "slow": 9.0,
+      "trade_cash": 0.0
+    },
+    {
+      "cash": 1000.0,
+      "cash_before": 1000.0,
+      "cash_reconciliation_residual": 0.0,
+      "close": 12.0,
+      "date": "2020-01-06",
+      "dividend_cash": 0.0,
+      "equity": 1000.0,
+      "fast": 10.0,
+      "market_value": 0.0,
+      "open": 12.0,
+      "prior_adv_dollars": 8500000.0,
+      "shares": 0,
+      "shares_before": 0,
+      "signal_after_close": "BUY",
+      "slow": 9.666666666666666,
+      "trade_cash": 0.0
+    },
+    {
+      "cash": 5.0,
+      "cash_before": 1000.0,
+      "cash_reconciliation_residual": 0.0,
+      "close": 14.0,
+      "date": "2020-01-07",
+      "dividend_cash": 0.0,
+      "equity": 999.0,
+      "fast": 13.0,
+      "market_value": 994.0,
+      "open": 14.0,
+      "prior_adv_dollars": 10000000.0,
+      "shares": 71,
+      "shares_before": 0,
+      "signal_after_close": null,
+      "slow": 11.333333333333334,
+      "trade_cash": -995.0
+    },
+    {
+      "cash": 5.0,
+      "cash_before": 5.0,
+      "cash_reconciliation_residual": 0.0,
+      "close": 14.0,
+      "date": "2020-01-08",
+      "dividend_cash": 0.0,
+      "equity": 999.0,
+      "fast": 14.0,
+      "market_value": 994.0,
+      "open": 14.0,
+      "prior_adv_dollars": 13000000.0,
+      "shares": 71,
+      "shares_before": 71,
+      "signal_after_close": null,
+      "slow": 13.333333333333334,
+      "trade_cash": 0.0
+    },
+    {
+      "cash": 5.0,
+      "cash_before": 5.0,
+      "cash_reconciliation_residual": 0.0,
+      "close": 10.0,
+      "date": "2020-01-09",
+      "dividend_cash": 0.0,
+      "equity": 715.0,
+      "fast": 12.0,
+      "market_value": 710.0,
+      "open": 10.0,
+      "prior_adv_dollars": 14000000.0,
+      "shares": 71,
+      "shares_before": 71,
+      "signal_after_close": "SELL",
+      "slow": 12.666666666666666,
+      "trade_cash": 0.0
+    },
+    {
+      "cash": 572.0,
+      "cash_before": 5.0,
+      "cash_reconciliation_residual": 0.0,
+      "close": 8.0,
+      "date": "2020-01-10",
+      "dividend_cash": 0.0,
+      "equity": 572.0,
+      "fast": 9.0,
+      "market_value": 0.0,
+      "open": 8.0,
+      "prior_adv_dollars": 12000000.0,
+      "shares": 0,
+      "shares_before": 71,
+      "signal_after_close": null,
+      "slow": 10.666666666666666,
+      "trade_cash": 567.0
+    },
+    {
+      "cash": 572.0,
+      "cash_before": 572.0,
+      "cash_reconciliation_residual": 0.0,
+      "close": 8.0,
+      "date": "2020-01-11",
+      "dividend_cash": 0.0,
+      "equity": 572.0,
+      "fast": 8.0,
+      "market_value": 0.0,
+      "open": 8.0,
+      "prior_adv_dollars": 9000000.0,
+      "shares": 0,
+      "shares_before": 0,
+      "signal_after_close": null,
+      "slow": 8.666666666666666,
+      "trade_cash": 0.0
+    },
+    {
+      "cash": 572.0,
+      "cash_before": 572.0,
+      "cash_reconciliation_residual": 0.0,
+      "close": 8.0,
+      "date": "2020-01-12",
+      "dividend_cash": 0.0,
+      "equity": 572.0,
+      "fast": 8.0,
+      "market_value": 0.0,
+      "open": 8.0,
+      "prior_adv_dollars": 8000000.0,
+      "shares": 0,
+      "shares_before": 0,
+      "signal_after_close": null,
+      "slow": 8.0,
+      "trade_cash": 0.0
+    }
+  ],
+  "dividend_income": 0.0,
+  "last_signal_not_executed": null,
+  "metrics": {
+    "annualized_return": -0.9999999771978968,
+    "ending_equity": 572.0,
+    "fill_count": 2,
+    "max_drawdown": -0.42800000000000005,
+    "observations": 8,
+    "round_trip_count": 1,
+    "sharpe": -8.428061515958998,
+    "total_return": -0.42800000000000005,
+    "win_rate": 0.0
+  },
+  "open_position_pnl": 0.0,
+  "open_shares": 0,
+  "pnl_reconciliation_residual": 0.0,
+  "realized_pnl": -428.0,
+  "rejected_orders": [],
+  "simplified_reference": {
+    "daily": [
+      {
+        "date": "2020-01-05",
+        "equity": 1000.0
+      },
+      {
+        "date": "2020-01-06",
+        "equity": 1000.0
+      },
+      {
+        "date": "2020-01-07",
+        "equity": 1166.6666666666667
+      },
+      {
+        "date": "2020-01-08",
+        "equity": 1166.6666666666667
+      },
+      {
+        "date": "2020-01-09",
+        "equity": 833.3333333333334
+      },
+      {
+        "date": "2020-01-10",
+        "equity": 833.3333333333334
+      },
+      {
+        "date": "2020-01-11",
+        "equity": 833.3333333333334
+      },
+      {
+        "date": "2020-01-12",
+        "equity": 833.3333333333334
+      }
+    ],
+    "differences": [
+      "同标的、同样本、同交叉信号",
+      "前一收盘信号直接作用于下一段收盘到收盘收益，含不可实现的建仓前隔夜收益",
+      "零费用、零冲击、分数份额、股息即时再投资",
+      "无成交及现金账本，交易次数与胜率不冒充已核对指标"
+    ],
+    "label": "新建简化参考（不是原项目现有算法）",
+    "metrics": {
+      "annualized_return": -0.9967952751387217,
+      "ending_equity": 833.3333333333334,
+      "fill_count": null,
+      "max_drawdown": -0.2857142857142857,
+      "observations": 8,
+      "round_trip_count": null,
+      "sharpe": -1.905001905002856,
+      "total_return": -0.16666666666666663,
+      "win_rate": null
+    }
+  },
+  "trades": [
+    {
+      "cash_after": 5.0,
+      "cash_change": -995.0,
+      "date": "2020-01-07",
+      "fee": 1.0,
+      "impact_bps": 0.0,
+      "impact_cost": 0.0,
+      "notional": 994.0,
+      "participation": 9.94e-05,
+      "price": 14.0,
+      "quantity": 71,
+      "realized_pnl": null,
+      "reference_open": 14.0,
+      "shares_after": 71,
+      "side": "BUY",
+      "signal_date": "2020-01-06",
+      "slippage_cost": 0.0
+    },
+    {
+      "cash_after": 572.0,
+      "cash_change": 567.0,
+      "cycle_dividends": 0.0,
+      "date": "2020-01-10",
+      "entry_cost_including_fee": 995.0,
+      "entry_date": "2020-01-07",
+      "fee": 1.0,
+      "impact_bps": 0.0,
+      "impact_cost": 0.0,
+      "notional": 568.0,
+      "participation": 4.7333333333333336e-05,
+      "price": 8.0,
+      "quantity": 71,
+      "realized_pnl": -428.0,
+      "reference_open": 8.0,
+      "shares_after": 0,
+      "side": "SELL",
+      "signal_date": "2020-01-09",
+      "slippage_cost": 0.0
+    }
+  ]
+}

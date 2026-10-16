@@ -1,0 +1,14 @@
+{
+  "cio_integration": "pending_original_repository",
+  "created_at": "2026-10-16T14:32:55.546179+00:00",
+  "error_code": "CALCULATION_FAILED",
+  "exception_type": "ArithmeticError",
+  "failed_stage": "calculation",
+  "input_id": "a6d934f119cf640165a239c49be5bfc327ed3dfee9264ca4f674891436b43c10",
+  "reason": "SIMULATED: Calculation did not complete; no successful result is available.",
+  "run_id": "failure-compute",
+  "schema": "etf-result-receipt-v1",
+  "scope": "local_research_only",
+  "simulated": true,
+  "status": "failed"
+}

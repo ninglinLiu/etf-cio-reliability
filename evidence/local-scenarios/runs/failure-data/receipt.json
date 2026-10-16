@@ -1,0 +1,14 @@
+{
+  "cio_integration": "pending_original_repository",
+  "created_at": "2026-10-16T14:32:55.140711+00:00",
+  "error_code": "DATA_UNAVAILABLE_OR_INVALID",
+  "exception_type": "DataError",
+  "failed_stage": "data_validation",
+  "input_id": "20ab16bcceb1e5887f669920e5472c3d7f76698d7ca311ac810df6d2973aafa4",
+  "reason": "SIMULATED: Data acquisition/validation did not produce usable input.",
+  "run_id": "failure-data",
+  "schema": "etf-result-receipt-v1",
+  "scope": "local_research_only",
+  "simulated": true,
+  "status": "failed"
+}

@@ -1,0 +1,13 @@
+{
+  "cio_integration": "pending_original_repository",
+  "created_at": "2026-10-16T14:32:31.889330+00:00",
+  "input_id": "9dccbd646aa8265ec7b1b23b66649e1ea5a20a84cfd2d67827836ad278e33e55",
+  "result_id": "88f4a2b03d7c32778096535c336358326cb5b48dcb8086333b2a86102fc8d85d",
+  "run_id": "spy-v1",
+  "schema": "etf-result-receipt-v1",
+  "scope": "local_research_only",
+  "simulated": false,
+  "status": "succeeded",
+  "verified": true,
+  "check_scope": "current_input_match"
+}
