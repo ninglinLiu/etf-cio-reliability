@@ -1,0 +1,33 @@
+{
+  "cio_integration": "pending_original_repository",
+  "created_at": "2026-10-16T14:32:31.889330+00:00",
+  "input_id": "9dccbd646aa8265ec7b1b23b66649e1ea5a20a84cfd2d67827836ad278e33e55",
+  "result_id": "88f4a2b03d7c32778096535c336358326cb5b48dcb8086333b2a86102fc8d85d",
+  "run_id": "spy-v1",
+  "schema": "etf-result-receipt-v1",
+  "scope": "local_research_only",
+  "simulated": false,
+  "status": "succeeded",
+  "verified": true,
+  "check_scope": "current_input_match"
+}
+
+{
+  "schema": "etf-result-receipt-v1",
+  "run_id": "clone-reproduction",
+  "input_id": "9dccbd646aa8265ec7b1b23b66649e1ea5a20a84cfd2d67827836ad278e33e55",
+  "created_at": "2026-10-16T14:34:19.701426+00:00",
+  "simulated": false,
+  "scope": "local_research_only",
+  "cio_integration": "pending_original_repository",
+  "status": "succeeded",
+  "result_id": "88f4a2b03d7c32778096535c336358326cb5b48dcb8086333b2a86102fc8d85d"
+}
+
+{
+  "status": "passed",
+  "days_reconstructed": 2766,
+  "fills_reconstructed": 53,
+  "ending_equity": 234945.88919436675,
+  "max_absolute_residual": 0
+}

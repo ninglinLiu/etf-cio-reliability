@@ -11,10 +11,11 @@
 | 相邻 finresearch-lab 既有测试 | 21 / 21 通过；该仓库工作区保持干净；不是 CIO 回归 |
 | 本地三场景演示 | 参数、费用、快照、来源更改拒用旧结果；两次模拟失败留痕并以新 ID 恢复；同键复用、异输入冲突、篡改拒绝 |
 | 报告视觉检查 | 已在本地浏览器打开并检查标题、指标、图表、逐笔表和待验收说明 |
+| 干净副本复现 | 从实验分支重新 clone，历史校验、离线重算与独立对账均退出 0；输入标识与结果标识和原运行完全一致 |
 | CIO 接入 | 未执行，缺原项目与契约 |
 | 指定旧算法与机构 ≤10% | 未完成，不得打勾 |
 
-证据见 `evidence/tests.txt`、`evidence/adjacent-finresearch-tests.txt`、`evidence/audit.json`、`evidence/verify.json`、`evidence/local-scenarios/summary.json` 和对应运行文件。
+证据见 `evidence/tests.txt`、`evidence/adjacent-finresearch-tests.txt`、`evidence/audit.json`、`evidence/verify.json`、`evidence/clean-clone.txt`、`evidence/local-scenarios/summary.json` 和对应运行文件。
 
 ## SPY 结果（当前冻结假设下）
 
