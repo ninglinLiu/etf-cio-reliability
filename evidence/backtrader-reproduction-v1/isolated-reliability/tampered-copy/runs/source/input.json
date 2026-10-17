@@ -1,0 +1,56 @@
+{
+  "code": {
+    "calculation_commit": "42a6175445982f14498acedeb10c70b32702e97c",
+    "dependencies": {
+      "backtrader": "1.9.78.123",
+      "exchange-calendars": "4.13.2",
+      "matplotlib": "3.11.2",
+      "numpy": "2.4.6",
+      "pandas": "3.0.6",
+      "yfinance": "1.7.0"
+    },
+    "file_hashes": {
+      "etf_lab/__init__.py": "97ced3651cf207a4f78759444f7e5d6aba15e5b68ae395edb097e82d111a333d",
+      "etf_lab/__main__.py": "6424f8f1bb8e57e7c3ea3743ce9789569ac525c8f35b546e8fca215769baa6eb",
+      "etf_lab/artifacts.py": "d99da9afa5b50a8a9015bebc32d642352855d95090cf746f0735303d65f57ae5",
+      "etf_lab/backtrader_engine.py": "c7976451f76cdfa327b4ba3ab1676d566eefc994cb4b63b5b2c0383b9de7b351",
+      "etf_lab/data.py": "ce325289da8960aceaaba52844f8f367df1e9b7222272e3bf100c15558f192cd",
+      "etf_lab/engine.py": "d66256617f9cd47df0dfc3ad25e91d096eeaf8b95da4f4c8f5adbe7bae796d19",
+      "etf_lab/execution_contract.py": "b5106532e156f4f28de4fec1aa7a0aee1cd68fbff4deeea6c53a9e8a1d2967a3",
+      "etf_lab/handoff.py": "a63660aa287bac8cabc4b6856f554bcbc84a57f8f8908499e7c9eae4d7076b48",
+      "etf_lab/report.py": "5987fadc500c60427aa7cb6063b011566fb5a87023abd2b0587910140a6e56c5",
+      "pyproject.toml": "bd3e8b8437aed2fac9a4c42767b4e03bcedc47191da514b6ffbccbee041bef68",
+      "requirements.lock.txt": "cb95f4677eebdedff894deb94ab7dcc5107c351a39f09197e940be7fd52fa5cc"
+    },
+    "python": "3.11.9",
+    "source_digest": "2e93f8da8f4793bca253c0c5f1ebd4518f599583f974589ff13440e4f6d9e01e"
+  },
+  "data_cutoff": "2020-01-12",
+  "execution_engine": "backtrader-1.9.78.123-fixed-close-orders-v1",
+  "observed_at": "2020-02-01T00:00:00+00:00",
+  "price_basis": "Synthetic as-traded prices; calendar intentionally artificial",
+  "schema": "etf-input-v1",
+  "simulated_fault": null,
+  "snapshot_sha256": "a2e7f61d7ffd7ce249b754b5629ceb0456f32efe4cf14e8fbd6d389bb2b37f2c",
+  "source": "SIMULATED_OTHER_PROVIDER",
+  "source_url": "fixture://spy-hand-calculation-v1",
+  "strategy": {
+    "adv_window": 2,
+    "allocation": 0.5,
+    "annualization": 252,
+    "dividend_policy": "cash_on_ex_date",
+    "end": "2020-01-12",
+    "fast": 2,
+    "fee_bps": 0.0,
+    "fee_fixed": 0,
+    "impact_bps": 0,
+    "impact_threshold": 0.01,
+    "initial_cash": 1000.0,
+    "risk_free_annual": 0.0,
+    "slippage_bps": 0,
+    "slow": 3,
+    "start": "2020-01-05",
+    "strategy_version": "spy-sma-cross-v1",
+    "terminal_policy": "mark_to_market"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "algorithm": "sha256",
+  "files": {
+    "input.json": "eaf2d38c1740c46d8157cc55c35209411f1d45733aed5e334d5e89bac95d0dbe",
+    "nav.png": "90d3f413dd0467fc210bcbcf8a7638fc9df4af1528deeae2eb02dcae92aebc5d",
+    "receipt.json": "54a2d0c27b4cd124b6c49d76e1ccecdbc81e71b57a5d650bb3ea83b7d740dbc9",
+    "report.html": "daa1cbc07c6e43cea4d7d77c467663d89879cba4309d05186e945c55e7343b31",
+    "result.json": "c72d6a61795d3697cf0058874b77999ad16d96e4e376f30d0686ea52f29743d0",
+    "snapshot.json": "90569c45a24dc1460d55ad0593414871ceaa26090652a522bbfedbe874822554"
+  },
+  "limitation": "Integrity check, not administrator-proof signing"
+}

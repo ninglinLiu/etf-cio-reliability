@@ -28,6 +28,7 @@
 
 - [总览](output/index.html)、[新版 Backtrader 主报告](output/runs/spy-backtrader-v1/report.html)。
 - [技术复核与问题定位](docs/HARNESS_REVIEW.md)：原实现局限、替换位置和测试边界。
+- [真实行情时间边界实验](evidence/backtrader-causality-v1.json)：三个截断点、未来数据扰动，以及旧引擎按未来开盘改变股数的反例。
 - [新版算法对照](evidence/backtrader-reproduction-v1/existing-comparison/report.html)、[新版可靠性场景](evidence/backtrader-reproduction-v1/isolated-reliability/report.html)。
 - [机构文章复现](evidence/paired-replication-v1/report.html)：原文收益、回撤、交易次数均有精确数字，三项偏差低于 10%。**其同收盘成交近似仅用于论文数值重放，不作为无前视偏差的证据。**
 - [验收及范围](docs/ACCEPTANCE.md)、[交接契约](docs/INTEGRATION_PLAN.md)、[历史版本与回退](docs/DELIVERY.md)。

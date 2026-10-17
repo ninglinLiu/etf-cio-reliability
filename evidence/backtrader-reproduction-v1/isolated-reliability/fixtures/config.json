@@ -1,0 +1,19 @@
+{
+  "adv_window": 2,
+  "allocation": 0.5,
+  "annualization": 252,
+  "dividend_policy": "cash_on_ex_date",
+  "end": "2020-01-12",
+  "fast": 2,
+  "fee_bps": 0.0,
+  "fee_fixed": 0,
+  "impact_bps": 0,
+  "impact_threshold": 0.01,
+  "initial_cash": 1000.0,
+  "risk_free_annual": 0.0,
+  "slippage_bps": 0,
+  "slow": 3,
+  "start": "2020-01-05",
+  "strategy_version": "spy-sma-cross-v1",
+  "terminal_policy": "mark_to_market"
+}

@@ -1,0 +1,14 @@
+{
+  "case_id": "fees",
+  "cio_integrated": false,
+  "created_at": "2026-10-17T13:22:44.979708+00:00",
+  "downstream_eligible": true,
+  "input_id": "87d8f296b3aa5e19ee13adc2165159b436c818d791ad763d8aa46176544efedf",
+  "request_id": "d1f75ba82c98256f661f82d115365478ca4f32431efcb983c02cf180e4f17445",
+  "result_id": "fb481b395c6ef3d69b351f96f15da9e3a6ac3e7dea73c05c109c45ab82374d71",
+  "run_id": "fees",
+  "schema": "research-submission-v1",
+  "scope": "isolated_research_only",
+  "status": "succeeded",
+  "submission_id": "fees"
+}

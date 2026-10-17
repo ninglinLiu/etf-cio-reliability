@@ -34,6 +34,7 @@ def main():
         run("verify", ["-m", "etf_lab", "verify", "--run", str(market / "runs/offline-reproduction"),
                        "--snapshot", "data/spy.json", "--config", "config/spy.json"])
         run("audit", ["scripts/audit_result.py", str(market / "runs/offline-reproduction")])
+        run("causality", ["scripts/audit_causality.py", "--output", str(output / "causality.json")])
         run("existing-comparison", ["scripts/compare_existing.py", "--output", str(output / "existing-comparison")])
         run("institution", ["scripts/replicate_paired.py", "--output", str(output / "institution")])
         isolated = output / "isolated-reliability"
@@ -47,7 +48,7 @@ def main():
                                   "--submission-id", "original", "--case-id", "baseline"], expected=2)
     finally:
         (output / "reproduction.json").write_text(json.dumps({"checks": checks,
-             "passed": len(checks) == 11 and all(x["passed"] for x in checks)}, indent=2)+"\n", encoding="utf-8")
+             "passed": len(checks) == 12 and all(x["passed"] for x in checks)}, indent=2)+"\n", encoding="utf-8")
 
 
 if __name__ == "__main__": main()

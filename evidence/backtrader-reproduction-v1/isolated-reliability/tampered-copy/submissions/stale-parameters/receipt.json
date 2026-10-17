@@ -1,0 +1,13 @@
+{
+  "case_id": "parameters",
+  "cio_integrated": false,
+  "created_at": "2026-10-17T13:22:43.718543+00:00",
+  "downstream_eligible": false,
+  "reason": "INPUT_MISMATCH: result remains historical evidence only",
+  "request_id": "eaa7de1cd34dbbfb068c3d74878c666e37be15f8381731eebd1548fcd9f46b5d",
+  "run_id": "original",
+  "schema": "research-submission-v1",
+  "scope": "isolated_research_only",
+  "status": "rejected",
+  "submission_id": "stale-parameters"
+}

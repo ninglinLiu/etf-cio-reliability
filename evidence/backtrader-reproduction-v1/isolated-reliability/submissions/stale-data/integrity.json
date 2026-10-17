@@ -1,0 +1,7 @@
+{
+  "algorithm": "sha256",
+  "files": {
+    "receipt.json": "d2db2a0c5349ebc4debc432ec1d2d5b44aaea63a420410d2f1be233fcf7d4cec",
+    "request.json": "d759b519729846663ae8e51125497b7a3439f4fd464dfd7a12c28da6a6a5bee5"
+  }
+}

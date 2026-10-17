@@ -1,0 +1,11 @@
+{
+  "cio_integration": "outside_user_approved_independent_scope",
+  "created_at": "2026-10-17T13:22:33.040849+00:00",
+  "input_id": "85b32457b145d4d8506fff23a7d89d0d21cf4ca4781382633966e583e19bae8f",
+  "result_id": "ffed5204f5f7251bef8430c8fa03e0fb157954c510400e29dffa76e4b54a67a3",
+  "run_id": "spy-backtrader-v1",
+  "schema": "etf-result-receipt-v1",
+  "scope": "local_research_only",
+  "simulated": false,
+  "status": "succeeded"
+}

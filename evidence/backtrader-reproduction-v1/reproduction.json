@@ -1,0 +1,177 @@
+{
+  "checks": [
+    {
+      "check": "tests",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "passed": true
+    },
+    {
+      "check": "backtest",
+      "command": [
+        "python",
+        "-m",
+        "etf_lab",
+        "run",
+        "--snapshot",
+        "data/spy.json",
+        "--config",
+        "config/spy.json",
+        "--run-id",
+        "offline-reproduction",
+        "--output",
+        "C:\\Users\\20469\\OneDrive\\Desktop\\Claudebao\\etf-cio-reliability\\evidence\\backtrader-reproduction-v1\\market"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "passed": true
+    },
+    {
+      "check": "verify",
+      "command": [
+        "python",
+        "-m",
+        "etf_lab",
+        "verify",
+        "--run",
+        "C:\\Users\\20469\\OneDrive\\Desktop\\Claudebao\\etf-cio-reliability\\evidence\\backtrader-reproduction-v1\\market\\runs\\offline-reproduction",
+        "--snapshot",
+        "data/spy.json",
+        "--config",
+        "config/spy.json"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "passed": true
+    },
+    {
+      "check": "audit",
+      "command": [
+        "python",
+        "scripts/audit_result.py",
+        "C:\\Users\\20469\\OneDrive\\Desktop\\Claudebao\\etf-cio-reliability\\evidence\\backtrader-reproduction-v1\\market\\runs\\offline-reproduction"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "passed": true
+    },
+    {
+      "check": "existing-comparison",
+      "command": [
+        "python",
+        "scripts/compare_existing.py",
+        "--output",
+        "C:\\Users\\20469\\OneDrive\\Desktop\\Claudebao\\etf-cio-reliability\\evidence\\backtrader-reproduction-v1\\existing-comparison"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "passed": true
+    },
+    {
+      "check": "institution",
+      "command": [
+        "python",
+        "scripts/replicate_paired.py",
+        "--output",
+        "C:\\Users\\20469\\OneDrive\\Desktop\\Claudebao\\etf-cio-reliability\\evidence\\backtrader-reproduction-v1\\institution"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "passed": true
+    },
+    {
+      "check": "three-scenarios",
+      "command": [
+        "python",
+        "scripts/demo_reliability.py",
+        "--output",
+        "C:\\Users\\20469\\OneDrive\\Desktop\\Claudebao\\etf-cio-reliability\\evidence\\backtrader-reproduction-v1\\isolated-reliability"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "passed": true
+    },
+    {
+      "check": "consumer-success",
+      "command": [
+        "python",
+        "-m",
+        "etf_lab",
+        "research-read",
+        "--output",
+        "C:\\Users\\20469\\OneDrive\\Desktop\\Claudebao\\etf-cio-reliability\\evidence\\backtrader-reproduction-v1\\isolated-reliability",
+        "--submission-id",
+        "original",
+        "--case-id",
+        "baseline"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "passed": true
+    },
+    {
+      "check": "consumer-stale",
+      "command": [
+        "python",
+        "-m",
+        "etf_lab",
+        "research-read",
+        "--output",
+        "C:\\Users\\20469\\OneDrive\\Desktop\\Claudebao\\etf-cio-reliability\\evidence\\backtrader-reproduction-v1\\isolated-reliability",
+        "--submission-id",
+        "original",
+        "--case-id",
+        "fees"
+      ],
+      "exit_code": 2,
+      "expected_exit_code": 2,
+      "passed": true
+    },
+    {
+      "check": "consumer-failed",
+      "command": [
+        "python",
+        "-m",
+        "etf_lab",
+        "research-read",
+        "--output",
+        "C:\\Users\\20469\\OneDrive\\Desktop\\Claudebao\\etf-cio-reliability\\evidence\\backtrader-reproduction-v1\\isolated-reliability",
+        "--submission-id",
+        "failed-data",
+        "--case-id",
+        "baseline"
+      ],
+      "exit_code": 2,
+      "expected_exit_code": 2,
+      "passed": true
+    },
+    {
+      "check": "consumer-tampered",
+      "command": [
+        "python",
+        "-m",
+        "etf_lab",
+        "research-read",
+        "--output",
+        "C:\\Users\\20469\\OneDrive\\Desktop\\Claudebao\\etf-cio-reliability\\evidence\\backtrader-reproduction-v1\\isolated-reliability\\tampered-copy",
+        "--submission-id",
+        "original",
+        "--case-id",
+        "baseline"
+      ],
+      "exit_code": 2,
+      "expected_exit_code": 2,
+      "passed": true
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,151 @@
+{
+  "bars": [
+    {
+      "close": 10.0,
+      "date": "2020-01-01",
+      "dividend": 0.0,
+      "high": 10.0,
+      "low": 10.0,
+      "open": 10.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    },
+    {
+      "close": 10.0,
+      "date": "2020-01-02",
+      "dividend": 0.0,
+      "high": 10.0,
+      "low": 10.0,
+      "open": 10.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    },
+    {
+      "close": 10.0,
+      "date": "2020-01-03",
+      "dividend": 0.0,
+      "high": 10.0,
+      "low": 10.0,
+      "open": 10.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    },
+    {
+      "close": 9.0,
+      "date": "2020-01-04",
+      "dividend": 0.0,
+      "high": 9.0,
+      "low": 9.0,
+      "open": 9.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    },
+    {
+      "close": 8.0,
+      "date": "2020-01-05",
+      "dividend": 0.0,
+      "high": 8.0,
+      "low": 8.0,
+      "open": 8.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    },
+    {
+      "close": 12.0,
+      "date": "2020-01-06",
+      "dividend": 0.0,
+      "high": 12.0,
+      "low": 12.0,
+      "open": 12.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    },
+    {
+      "close": 14.0,
+      "date": "2020-01-07",
+      "dividend": 0.0,
+      "high": 14.0,
+      "low": 14.0,
+      "open": 14.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    },
+    {
+      "close": 14.0,
+      "date": "2020-01-08",
+      "dividend": 0.0,
+      "high": 14.0,
+      "low": 14.0,
+      "open": 14.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    },
+    {
+      "close": 10.0,
+      "date": "2020-01-09",
+      "dividend": 0.0,
+      "high": 10.0,
+      "low": 10.0,
+      "open": 10.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    },
+    {
+      "close": 8.0,
+      "date": "2020-01-10",
+      "dividend": 0.0,
+      "high": 8.0,
+      "low": 8.0,
+      "open": 8.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    },
+    {
+      "close": 8.0,
+      "date": "2020-01-11",
+      "dividend": 0.0,
+      "high": 8.0,
+      "low": 8.0,
+      "open": 8.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    },
+    {
+      "close": 8.0,
+      "date": "2020-01-12",
+      "dividend": 0.0,
+      "high": 8.0,
+      "low": 8.0,
+      "open": 8.0,
+      "split": 1.0,
+      "volume": 1000000.0
+    }
+  ],
+  "calendar": "Explicit artificial daily sessions for unit tests, NOT NYSE",
+  "coverage": {
+    "end_inclusive": "2020-01-12",
+    "start": "2020-01-01"
+  },
+  "data_cutoff": "2020-01-12",
+  "expected_sessions": [
+    "2020-01-01",
+    "2020-01-02",
+    "2020-01-03",
+    "2020-01-04",
+    "2020-01-05",
+    "2020-01-06",
+    "2020-01-07",
+    "2020-01-08",
+    "2020-01-09",
+    "2020-01-10",
+    "2020-01-11",
+    "2020-01-12"
+  ],
+  "observed_at": "2020-02-01T00:00:00+00:00",
+  "price_basis": "Synthetic as-traded prices; calendar intentionally artificial",
+  "schema": "etf-bars-v1",
+  "source": "SIMULATED_FIXTURE",
+  "source_url": "fixture://spy-hand-calculation-v1",
+  "symbol": "SPY",
+  "synthetic": true
+}

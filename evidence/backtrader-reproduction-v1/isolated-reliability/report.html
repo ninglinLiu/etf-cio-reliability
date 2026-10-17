@@ -1,0 +1,121 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>研究结果可靠性验收</title>
+<style>body{font:16px system-ui;background:#edf3f2;color:#152c2b;margin:36px auto;max-width:1100px}h1{font-size:34px}
+.banner,article{background:white;padding:22px;border-radius:10px;margin:18px 0}span{float:right;color:#087a48;font-weight:bold}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px monospace;color:#374c51}a{color:#086b62}</style>
+<h1>研究结果可靠性 · 三场景验收</h1><div class="banner"><strong>3 / 3 场景通过 · 隔离合成数据</strong>
+<p>按用户确认的独立验收范围：提交与读取都会重新校验。没有接入现有 CIO，也不连接投资审批或交易。</p>
+<p>参数、数据、来源、费用改变 → 拒用历史结果；模拟失败 → 阻断交接 → 新运行恢复；重复复用、冲突拒绝、篡改发现。</p>
+<a href="summary.json">完整断言与标识 JSON</a> · <a href="calls.jsonl">实际调用日志</a></div><article><b>1/read/parameters</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;1/read/parameters&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;rejection&quot;: &quot;CURRENT_CASE_MISMATCH: historical acceptance is not current&quot;
+}</pre></article><article><b>1/submit-and-recover/parameters</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;1/submit-and-recover/parameters&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;old_input_id&quot;: &quot;eaf2d38c1740c46d8157cc55c35209411f1d45733aed5e334d5e89bac95d0dbe&quot;,
+  &quot;new_input_id&quot;: &quot;4445de4c9b4a6a75664d9146e7b249d67457bbedb075f93fe8a3d320877b728e&quot;,
+  &quot;new_result_id&quot;: &quot;f816dc5b5c72712dbda60644e9bb4d1d2d2a9a274a823be0f0b14005fe4fc6e0&quot;,
+  &quot;rejection&quot;: &quot;INPUT_MISMATCH: result remains historical evidence only&quot;
+}</pre></article><article><b>1/read/fees</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;1/read/fees&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;rejection&quot;: &quot;CURRENT_CASE_MISMATCH: historical acceptance is not current&quot;
+}</pre></article><article><b>1/submit-and-recover/fees</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;1/submit-and-recover/fees&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;old_input_id&quot;: &quot;eaf2d38c1740c46d8157cc55c35209411f1d45733aed5e334d5e89bac95d0dbe&quot;,
+  &quot;new_input_id&quot;: &quot;87d8f296b3aa5e19ee13adc2165159b436c818d791ad763d8aa46176544efedf&quot;,
+  &quot;new_result_id&quot;: &quot;fb481b395c6ef3d69b351f96f15da9e3a6ac3e7dea73c05c109c45ab82374d71&quot;,
+  &quot;rejection&quot;: &quot;INPUT_MISMATCH: result remains historical evidence only&quot;
+}</pre></article><article><b>1/read/data</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;1/read/data&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;rejection&quot;: &quot;CURRENT_CASE_MISMATCH: historical acceptance is not current&quot;
+}</pre></article><article><b>1/submit-and-recover/data</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;1/submit-and-recover/data&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;old_input_id&quot;: &quot;eaf2d38c1740c46d8157cc55c35209411f1d45733aed5e334d5e89bac95d0dbe&quot;,
+  &quot;new_input_id&quot;: &quot;cc3138cd86248da59e0d48a54f239d1260d6ed8b08b36490475b18efde06619b&quot;,
+  &quot;new_result_id&quot;: &quot;c72d6a61795d3697cf0058874b77999ad16d96e4e376f30d0686ea52f29743d0&quot;,
+  &quot;rejection&quot;: &quot;INPUT_MISMATCH: result remains historical evidence only&quot;
+}</pre></article><article><b>1/read/source</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;1/read/source&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;rejection&quot;: &quot;CURRENT_CASE_MISMATCH: historical acceptance is not current&quot;
+}</pre></article><article><b>1/submit-and-recover/source</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;1/submit-and-recover/source&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;old_input_id&quot;: &quot;eaf2d38c1740c46d8157cc55c35209411f1d45733aed5e334d5e89bac95d0dbe&quot;,
+  &quot;new_input_id&quot;: &quot;1dcf02ddb1680c0fa567b977ced3345fa94f1a7265ea9bfdfa99c0abd86c93f1&quot;,
+  &quot;new_result_id&quot;: &quot;c72d6a61795d3697cf0058874b77999ad16d96e4e376f30d0686ea52f29743d0&quot;,
+  &quot;rejection&quot;: &quot;INPUT_MISMATCH: result remains historical evidence only&quot;
+}</pre></article><article><b>2/read/data</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;2/read/data&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;rejection&quot;: &quot;SUBMISSION_NOT_SUCCEEDED&quot;
+}</pre></article><article><b>2/failure-and-recovery/data</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;2/failure-and-recovery/data&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;failure&quot;: {
+    &quot;schema&quot;: &quot;etf-result-receipt-v1&quot;,
+    &quot;run_id&quot;: &quot;failed-data&quot;,
+    &quot;input_id&quot;: &quot;304b1294e76a167073a208c067762ae62054fb5caec67eaa9f947dcc6aff847b&quot;,
+    &quot;created_at&quot;: &quot;2026-10-17T13:22:47.065547+00:00&quot;,
+    &quot;simulated&quot;: true,
+    &quot;scope&quot;: &quot;local_research_only&quot;,
+    &quot;cio_integration&quot;: &quot;outside_user_approved_independent_scope&quot;,
+    &quot;status&quot;: &quot;failed&quot;,
+    &quot;failed_stage&quot;: &quot;data_acquisition&quot;,
+    &quot;error_code&quot;: &quot;SIMULATED_DATA_ACQUISITION_FAILED&quot;,
+    &quot;reason&quot;: &quot;SIMULATED: Injected data-source failure before calculation; not a real supplier incident.&quot;,
+    &quot;exception_type&quot;: &quot;DataError&quot;
+  },
+  &quot;refusal&quot;: &quot;RUN_NOT_SUCCEEDED: SIMULATED_DATA_ACQUISITION_FAILED&quot;,
+  &quot;recovery_run_id&quot;: &quot;recovered-data&quot;
+}</pre></article><article><b>2/read/compute</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;2/read/compute&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;rejection&quot;: &quot;SUBMISSION_NOT_SUCCEEDED&quot;
+}</pre></article><article><b>2/failure-and-recovery/compute</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;2/failure-and-recovery/compute&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;failure&quot;: {
+    &quot;schema&quot;: &quot;etf-result-receipt-v1&quot;,
+    &quot;run_id&quot;: &quot;failed-compute&quot;,
+    &quot;input_id&quot;: &quot;6dda9149760c02d08a41816bd985e13073d43b1525e433c800e84a026d5b0ab6&quot;,
+    &quot;created_at&quot;: &quot;2026-10-17T13:22:47.903363+00:00&quot;,
+    &quot;simulated&quot;: true,
+    &quot;scope&quot;: &quot;local_research_only&quot;,
+    &quot;cio_integration&quot;: &quot;outside_user_approved_independent_scope&quot;,
+    &quot;status&quot;: &quot;failed&quot;,
+    &quot;failed_stage&quot;: &quot;calculation&quot;,
+    &quot;error_code&quot;: &quot;CALCULATION_FAILED&quot;,
+    &quot;reason&quot;: &quot;SIMULATED: Calculation did not complete; no successful result is available.&quot;,
+    &quot;exception_type&quot;: &quot;ArithmeticError&quot;
+  },
+  &quot;refusal&quot;: &quot;RUN_NOT_SUCCEEDED: CALCULATION_FAILED&quot;,
+  &quot;recovery_run_id&quot;: &quot;recovered-compute&quot;
+}</pre></article><article><b>3/submission-conflict</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;3/submission-conflict&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;rejection&quot;: &quot;SUBMISSION_IDEMPOTENCY_CONFLICT&quot;
+}</pre></article><article><b>3/run-conflict</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;3/run-conflict&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;rejection&quot;: &quot;INPUT_MISMATCH: result remains historical evidence only&quot;
+}</pre></article><article><b>3/idempotency</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;3/idempotency&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;valid_results_for_original_key&quot;: 1,
+  &quot;valid_handoffs_for_original_key&quot;: 1,
+  &quot;second_action&quot;: &quot;reused_succeeded&quot;,
+  &quot;recompute_run_id&quot;: &quot;explicit-recompute&quot;
+}</pre></article><article><b>3/consume-tampered</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;3/consume-tampered&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;rejection&quot;: &quot;INTEGRITY_MISMATCH: result.json&quot;
+}</pre></article><article><b>3/reuse-tampered</b><span>PASS</span><pre>{
+  &quot;scenario&quot;: &quot;3/reuse-tampered&quot;,
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;rejection&quot;: &quot;INTEGRITY_MISMATCH: result.json&quot;
+}</pre></article></html>
