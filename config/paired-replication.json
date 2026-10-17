@@ -1,0 +1,20 @@
+{
+  "strategy": "Glenn SPY/TLT paired switching, IFTA 2021 Table 1 first row",
+  "symbols": ["SPY", "TLT"],
+  "start": "2004-01-02",
+  "end": "2013-12-31",
+  "lookback_months": 3,
+  "review": "last completed trading session of each calendar month",
+  "initial_entry": "first sample close, ranking at preceding month end",
+  "execution": "signal close, to replicate paper; not an executable next-open claim",
+  "initial_cash": 100000,
+  "fee_fixed_per_order": 1,
+  "slippage_bps": 0,
+  "impact_bps": 0,
+  "dividends": "embedded once in Yahoo adjusted-close total-return ratios",
+  "terminal": "mark to market, no final liquidation",
+  "annualization": 250,
+  "reference": {"total_return": 2.941, "annualized_return": 0.146, "max_drawdown": -0.189, "order_count": 45},
+  "relative_tolerance": 0.10,
+  "predeclared_assumptions": "The paper says nominal trading costs without specifying their amount. $1 per order is a disclosed approximation fixed before replay, not fitted to the published numbers. Fractional adjusted units serve only to reproduce index-like return accounting."
+}

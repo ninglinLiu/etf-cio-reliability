@@ -1,4 +1,22 @@
-# 接入前方案 · 2026-10-16
+# 接入前方案 · 2026-10-17 更新
+
+## 已确认的范围变更（实施前记录）
+
+用户确认没有任务书预设的原 CIO 项目，并选择“按独立可靠性验收完成”。任务二改为本仓库的研究结果可靠性验收；原 CIO 集成不再是本次依赖，也不宣称已完成。复用 `artifacts.py` 的不可覆盖运行、输入指纹、校验、失败与调用日志，不建立调度器、投资审批或交易系统。
+
+新增 `etf_lab/handoff.py`：冻结案例、提交校验、消费时重新校验。一个案例绑定一个冻结输入；参数/数据/费用改变必须新建案例。同一提交键相同请求复用；不同请求冲突。失败提交保留拒绝回执，不产生成功交接记录。读取必须显式给出当前案例，拒绝历史案例的结果；每次重新检查原产物，不能复用缓存的通过状态。
+
+拟修改 `etf_lab/__main__.py` 增加 `case-freeze`、`research-submit`、`research-read` 命令；新增 `tests/test_handoff.py` 和 `scripts/demo_reliability.py`，保存隔离成功/失败/恢复案例、实际输出与 HTML 演示。既有回测计算规则不变。另以固定版本的相邻 `finresearch-lab` 算法补充比较，不将其认作 CIO。
+
+验收命令（输出目录必须新建）：
+
+```powershell
+.venv\Scripts\python.exe -m unittest discover -s tests -v
+.venv\Scripts\python.exe scripts/demo_reliability.py --output scratch/reliability-new
+.venv\Scripts\python.exe -m etf_lab research-read --output scratch/reliability-new --submission-id original --case-id baseline
+```
+
+以下保留首版检查历史，原“待原 CIO”状态由以上范围变更取代。
 
 状态：本地新建实验项目。尚未取得原 CIO 仓库、`cio.py`、研究交接契约和指定简化算法；任务二尚未接入、未验收。
 

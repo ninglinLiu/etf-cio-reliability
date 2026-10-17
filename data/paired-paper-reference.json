@@ -1,0 +1,16 @@
+{
+  "url": "https://www.ifta.org/assets/docs/ifta_journal_2021.pdf",
+  "sha256": "baf29897ee4a7b3a1d431e432a5a4663211a5219e3ef50d7b78d7cec0f426c4b",
+  "bytes": 19488681,
+  "pdf_page": 97,
+  "printed_page": 95,
+  "table": 1,
+  "row": "monthly evaluation / three-month momentum",
+  "reference": {
+    "total_return": 2.941,
+    "CAGR": 0.146,
+    "maximum_drawdown": 0.189,
+    "buy_and_sell_count": 45
+  },
+  "access_note": "Publisher PDF fetched with ordinary browser User-Agent after default-client HTTP 403; entire document remains local scratch, not redistributed."
+}

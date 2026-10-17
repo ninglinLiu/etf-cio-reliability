@@ -24,6 +24,18 @@ def main():
     check.add_argument("--run", type=Path, required=True)
     check.add_argument("--snapshot", type=Path)
     check.add_argument("--config", type=Path)
+    freeze = sub.add_parser("case-freeze")
+    freeze.add_argument("--snapshot", type=Path, required=True)
+    freeze.add_argument("--config", type=Path, required=True)
+    freeze.add_argument("--case-id", required=True)
+    freeze.add_argument("--output", type=Path, required=True)
+    for name in ("research-submit", "research-read"):
+        command = sub.add_parser(name)
+        command.add_argument("--output", type=Path, required=True)
+        command.add_argument("--case-id", required=True)
+        command.add_argument("--submission-id", required=True)
+        if name == "research-submit":
+            command.add_argument("--run-id", required=True)
     args = parser.parse_args()
     try:
         if args.command == "fetch":
@@ -43,6 +55,15 @@ def main():
             result = {"status": "succeeded", "snapshot": str(args.output), "bars": len(snapshot["bars"])}
         elif args.command == "run":
             result = execute(args.snapshot, Config(**read_json(args.config)), args.run_id, args.output, args.simulate_failure)
+        elif args.command == "case-freeze":
+            from .handoff import freeze_case
+            result = freeze_case(args.snapshot, Config(**read_json(args.config)), args.case_id, args.output)
+        elif args.command == "research-submit":
+            from .handoff import submit
+            result = submit(args.output, args.submission_id, args.case_id, args.run_id)
+        elif args.command == "research-read":
+            from .handoff import consume
+            result = consume(args.output, args.submission_id, args.case_id)
         else:
             if bool(args.snapshot) != bool(args.config):
                 raise EvidenceError("EXPECTED_INPUT_REQUIRES_BOTH_SNAPSHOT_AND_CONFIG")
@@ -51,7 +72,7 @@ def main():
             result = verify(args.run, expected)
             result = {**result, "verified": True, "check_scope": "current_input_match" if expected else "historical_integrity_only"}
         print(json.dumps(result, ensure_ascii=True, indent=2))
-        return 0 if result.get("status") == "succeeded" else 1
+        return {"succeeded": 0, "failed": 1, "rejected": 2}.get(result.get("status"), 2)
     except (EvidenceError, DataError, ValueError, OSError, TypeError) as exc:
         # Only our fixed EvidenceError codes are printable; arbitrary input or
         # provider exception messages may contain secrets and are withheld.

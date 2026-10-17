@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ninglinLiu/Xfinresearch-lab",
+  "commit": "df92e8c19dfd29f857ffc528c1f2970e44f128f0",
+  "path": "finresearch/benchmark.py",
+  "sha256": "80345e7cd4937c679f854c072fc2a6af91b026bef92d491e37623a475a192263",
+  "scope": "Unmodified source frozen for offline comparison; only pure numeric functions loaded by AST; no model/store/network execution"
+}

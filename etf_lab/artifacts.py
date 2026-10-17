@@ -141,10 +141,10 @@ def execute(snapshot_path: Path, cfg: Config, run_id: str, output: Path, fault: 
     write_new(run_dir / "input.json", frozen)
     with (run_dir / "snapshot.json").open("xb") as f:
         f.write(snapshot_raw)
-    stage = "data_validation"
+    stage = "data_acquisition" if fault == "data" else "data_validation"
     receipt = {"schema": "etf-result-receipt-v1", "run_id": run_id, "input_id": input_id,
                "created_at": timestamp(), "simulated": fault is not None,
-               "scope": "local_research_only", "cio_integration": "pending_original_repository"}
+               "scope": "local_research_only", "cio_integration": "outside_user_approved_independent_scope"}
     try:
         if fault == "data":
             raise DataError("Simulated data source outage")
@@ -155,18 +155,20 @@ def execute(snapshot_path: Path, cfg: Config, run_id: str, output: Path, fault: 
             raise ArithmeticError("Simulated arithmetic failure")
         result = run_backtest(snapshot, cfg)
         result["simplified_reference"] = simplified_reference(snapshot, cfg)
-        result["acceptance"] = {"existing_algorithm_comparison": "PENDING_ORIGINAL_ALGORITHM",
-                                "institutional_replication": "PENDING_COMPARABLE_PRIMARY_BENCHMARK",
-                                "cio_scenarios": "PENDING_ORIGINAL_CIO_CONTRACT"}
+        result["acceptance"] = {"existing_algorithm_comparison": "SEPARATE_VERSIONED_COMPARISON_REPORT",
+                                "institutional_replication": "SEPARATE_REPLICATION_REPORT_WITH_LIMITATIONS",
+                                "research_handoff": "REQUIRES_SUBMISSION_AND_READ_VALIDATION",
+                                "cio_integration": "OUTSIDE_USER_APPROVED_INDEPENDENT_SCOPE"}
         stage = "report"
         from .report import render
         render(run_dir, result, cfg, snapshot, receipt)
         write_new(run_dir / "result.json", result)
         receipt.update(status="succeeded", result_id=sha(encoded(result)))
     except Exception as exc:
-        code = {"data_validation": "DATA_UNAVAILABLE_OR_INVALID", "calculation": "CALCULATION_FAILED", "report": "REPORT_FAILED"}[stage]
+        code = {"data_acquisition": "SIMULATED_DATA_ACQUISITION_FAILED", "data_validation": "DATA_UNAVAILABLE_OR_INVALID", "calculation": "CALCULATION_FAILED", "report": "REPORT_FAILED"}[stage]
         receipt.update(status="failed", failed_stage=stage, error_code=code,
                        reason=("SIMULATED: " if fault else "") + {
+                           "data_acquisition": "Injected data-source failure before calculation; not a real supplier incident.",
                            "data_validation": "Data acquisition/validation did not produce usable input.",
                            "calculation": "Calculation did not complete; no successful result is available.",
                            "report": "Report generation did not complete; partial files are not valid evidence."}[stage],
