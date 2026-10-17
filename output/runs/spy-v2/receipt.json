@@ -1,0 +1,11 @@
+{
+  "cio_integration": "outside_user_approved_independent_scope",
+  "created_at": "2026-10-17T05:01:43.088417+00:00",
+  "input_id": "2ae4005170c9b048069902655f50f1cfeb9c48bcd0449040c42dc13fd024a703",
+  "result_id": "bc29247fb6a85db7430dfea5e7645b96d1cdabe8a32844a550468c52375f23ba",
+  "run_id": "spy-v2",
+  "schema": "etf-result-receipt-v1",
+  "scope": "local_research_only",
+  "simulated": false,
+  "status": "succeeded"
+}

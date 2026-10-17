@@ -1,0 +1,1024 @@
+diff --git a/.gitattributes b/.gitattributes
+index d6288dc..2bdbf87 100644
+--- a/.gitattributes
++++ b/.gitattributes
+@@ -1,4 +1,5 @@
+ * text=auto eol=lf
++vendor/** -text
+ *.png binary
+ data/** -text whitespace=cr-at-eol
+ output/** -text whitespace=cr-at-eol
+diff --git a/config/paired-replication.json b/config/paired-replication.json
+new file mode 100644
+index 0000000..307ec56
+--- /dev/null
++++ b/config/paired-replication.json
+@@ -0,0 +1,20 @@
++{
++  "strategy": "Glenn SPY/TLT paired switching, IFTA 2021 Table 1 first row",
++  "symbols": ["SPY", "TLT"],
++  "start": "2004-01-02",
++  "end": "2013-12-31",
++  "lookback_months": 3,
++  "review": "last completed trading session of each calendar month",
++  "initial_entry": "first sample close, ranking at preceding month end",
++  "execution": "signal close, to replicate paper; not an executable next-open claim",
++  "initial_cash": 100000,
++  "fee_fixed_per_order": 1,
++  "slippage_bps": 0,
++  "impact_bps": 0,
++  "dividends": "embedded once in Yahoo adjusted-close total-return ratios",
++  "terminal": "mark to market, no final liquidation",
++  "annualization": 250,
++  "reference": {"total_return": 2.941, "annualized_return": 0.146, "max_drawdown": -0.189, "order_count": 45},
++  "relative_tolerance": 0.10,
++  "predeclared_assumptions": "The paper says nominal trading costs without specifying their amount. $1 per order is a disclosed approximation fixed before replay, not fitted to the published numbers. Fractional adjusted units serve only to reproduce index-like return accounting."
++}
+diff --git a/docs/INTEGRATION_PLAN.md b/docs/INTEGRATION_PLAN.md
+index c82a92f..ae6c992 100644
+--- a/docs/INTEGRATION_PLAN.md
++++ b/docs/INTEGRATION_PLAN.md
+@@ -1,4 +1,22 @@
+-# 接入前方案 · 2026-10-16
++# 接入前方案 · 2026-10-17 更新
++
++## 已确认的范围变更（实施前记录）
++
++用户确认没有任务书预设的原 CIO 项目，并选择“按独立可靠性验收完成”。任务二改为本仓库的研究结果可靠性验收；原 CIO 集成不再是本次依赖，也不宣称已完成。复用 `artifacts.py` 的不可覆盖运行、输入指纹、校验、失败与调用日志，不建立调度器、投资审批或交易系统。
++
++新增 `etf_lab/handoff.py`：冻结案例、提交校验、消费时重新校验。一个案例绑定一个冻结输入；参数/数据/费用改变必须新建案例。同一提交键相同请求复用；不同请求冲突。失败提交保留拒绝回执，不产生成功交接记录。读取必须显式给出当前案例，拒绝历史案例的结果；每次重新检查原产物，不能复用缓存的通过状态。
++
++拟修改 `etf_lab/__main__.py` 增加 `case-freeze`、`research-submit`、`research-read` 命令；新增 `tests/test_handoff.py` 和 `scripts/demo_reliability.py`，保存隔离成功/失败/恢复案例、实际输出与 HTML 演示。既有回测计算规则不变。另以固定版本的相邻 `finresearch-lab` 算法补充比较，不将其认作 CIO。
++
++验收命令（输出目录必须新建）：
++
++```powershell
++.venv\Scripts\python.exe -m unittest discover -s tests -v
++.venv\Scripts\python.exe scripts/demo_reliability.py --output scratch/reliability-new
++.venv\Scripts\python.exe -m etf_lab research-read --output scratch/reliability-new --submission-id original --case-id baseline
++```
++
++以下保留首版检查历史，原“待原 CIO”状态由以上范围变更取代。
+ 
+ 状态：本地新建实验项目。尚未取得原 CIO 仓库、`cio.py`、研究交接契约和指定简化算法；任务二尚未接入、未验收。
+ 
+diff --git a/etf_lab/__main__.py b/etf_lab/__main__.py
+index 93aa051..7cc2ad4 100644
+--- a/etf_lab/__main__.py
++++ b/etf_lab/__main__.py
+@@ -24,6 +24,18 @@ def main():
+     check.add_argument("--run", type=Path, required=True)
+     check.add_argument("--snapshot", type=Path)
+     check.add_argument("--config", type=Path)
++    freeze = sub.add_parser("case-freeze")
++    freeze.add_argument("--snapshot", type=Path, required=True)
++    freeze.add_argument("--config", type=Path, required=True)
++    freeze.add_argument("--case-id", required=True)
++    freeze.add_argument("--output", type=Path, required=True)
++    for name in ("research-submit", "research-read"):
++        command = sub.add_parser(name)
++        command.add_argument("--output", type=Path, required=True)
++        command.add_argument("--case-id", required=True)
++        command.add_argument("--submission-id", required=True)
++        if name == "research-submit":
++            command.add_argument("--run-id", required=True)
+     args = parser.parse_args()
+     try:
+         if args.command == "fetch":
+@@ -43,6 +55,15 @@ def main():
+             result = {"status": "succeeded", "snapshot": str(args.output), "bars": len(snapshot["bars"])}
+         elif args.command == "run":
+             result = execute(args.snapshot, Config(**read_json(args.config)), args.run_id, args.output, args.simulate_failure)
++        elif args.command == "case-freeze":
++            from .handoff import freeze_case
++            result = freeze_case(args.snapshot, Config(**read_json(args.config)), args.case_id, args.output)
++        elif args.command == "research-submit":
++            from .handoff import submit
++            result = submit(args.output, args.submission_id, args.case_id, args.run_id)
++        elif args.command == "research-read":
++            from .handoff import consume
++            result = consume(args.output, args.submission_id, args.case_id)
+         else:
+             if bool(args.snapshot) != bool(args.config):
+                 raise EvidenceError("EXPECTED_INPUT_REQUIRES_BOTH_SNAPSHOT_AND_CONFIG")
+@@ -51,7 +72,7 @@ def main():
+             result = verify(args.run, expected)
+             result = {**result, "verified": True, "check_scope": "current_input_match" if expected else "historical_integrity_only"}
+         print(json.dumps(result, ensure_ascii=True, indent=2))
+-        return 0 if result.get("status") == "succeeded" else 1
++        return {"succeeded": 0, "failed": 1, "rejected": 2}.get(result.get("status"), 2)
+     except (EvidenceError, DataError, ValueError, OSError, TypeError) as exc:
+         # Only our fixed EvidenceError codes are printable; arbitrary input or
+         # provider exception messages may contain secrets and are withheld.
+diff --git a/etf_lab/artifacts.py b/etf_lab/artifacts.py
+index 1a1937d..c491c52 100644
+--- a/etf_lab/artifacts.py
++++ b/etf_lab/artifacts.py
+@@ -141,10 +141,10 @@ def execute(snapshot_path: Path, cfg: Config, run_id: str, output: Path, fault:
+     write_new(run_dir / "input.json", frozen)
+     with (run_dir / "snapshot.json").open("xb") as f:
+         f.write(snapshot_raw)
+-    stage = "data_validation"
++    stage = "data_acquisition" if fault == "data" else "data_validation"
+     receipt = {"schema": "etf-result-receipt-v1", "run_id": run_id, "input_id": input_id,
+                "created_at": timestamp(), "simulated": fault is not None,
+-               "scope": "local_research_only", "cio_integration": "pending_original_repository"}
++               "scope": "local_research_only", "cio_integration": "outside_user_approved_independent_scope"}
+     try:
+         if fault == "data":
+             raise DataError("Simulated data source outage")
+@@ -155,18 +155,20 @@ def execute(snapshot_path: Path, cfg: Config, run_id: str, output: Path, fault:
+             raise ArithmeticError("Simulated arithmetic failure")
+         result = run_backtest(snapshot, cfg)
+         result["simplified_reference"] = simplified_reference(snapshot, cfg)
+-        result["acceptance"] = {"existing_algorithm_comparison": "PENDING_ORIGINAL_ALGORITHM",
+-                                "institutional_replication": "PENDING_COMPARABLE_PRIMARY_BENCHMARK",
+-                                "cio_scenarios": "PENDING_ORIGINAL_CIO_CONTRACT"}
++        result["acceptance"] = {"existing_algorithm_comparison": "SEPARATE_VERSIONED_COMPARISON_REPORT",
++                                "institutional_replication": "SEPARATE_REPLICATION_REPORT_WITH_LIMITATIONS",
++                                "research_handoff": "REQUIRES_SUBMISSION_AND_READ_VALIDATION",
++                                "cio_integration": "OUTSIDE_USER_APPROVED_INDEPENDENT_SCOPE"}
+         stage = "report"
+         from .report import render
+         render(run_dir, result, cfg, snapshot, receipt)
+         write_new(run_dir / "result.json", result)
+         receipt.update(status="succeeded", result_id=sha(encoded(result)))
+     except Exception as exc:
+-        code = {"data_validation": "DATA_UNAVAILABLE_OR_INVALID", "calculation": "CALCULATION_FAILED", "report": "REPORT_FAILED"}[stage]
++        code = {"data_acquisition": "SIMULATED_DATA_ACQUISITION_FAILED", "data_validation": "DATA_UNAVAILABLE_OR_INVALID", "calculation": "CALCULATION_FAILED", "report": "REPORT_FAILED"}[stage]
+         receipt.update(status="failed", failed_stage=stage, error_code=code,
+                        reason=("SIMULATED: " if fault else "") + {
++                           "data_acquisition": "Injected data-source failure before calculation; not a real supplier incident.",
+                            "data_validation": "Data acquisition/validation did not produce usable input.",
+                            "calculation": "Calculation did not complete; no successful result is available.",
+                            "report": "Report generation did not complete; partial files are not valid evidence."}[stage],
+diff --git a/etf_lab/handoff.py b/etf_lab/handoff.py
+new file mode 100644
+index 0000000..f731a67
+--- /dev/null
++++ b/etf_lab/handoff.py
+@@ -0,0 +1,153 @@
++"""Isolated research evidence contract. No scheduler, investment rules or orders."""
++from pathlib import Path
++import re
++
++from .artifacts import (EvidenceError, code_identity, encoded, frozen_inputs,
++                        log_call, read_json, sha, timestamp, verify, write_new)
++from .engine import Config
++
++
++def checked_id(value):
++    if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,79}", value):
++        raise EvidenceError("INVALID_RESEARCH_ID")
++    return value
++
++
++def seal(directory):
++    write_new(directory / "integrity.json", {"algorithm": "sha256", "files": {
++        p.name: sha(p.read_bytes()) for p in directory.iterdir() if p.is_file()}})
++
++
++def check_seal(directory, required):
++    try:
++        manifest = read_json(directory / "integrity.json")
++        if manifest.get("algorithm") != "sha256" or set(manifest["files"]) != set(required):
++            raise EvidenceError("RESEARCH_INTEGRITY_SCHEMA")
++        if {p.name for p in directory.iterdir()} != set(required) | {"integrity.json"}:
++            raise EvidenceError("RESEARCH_ARTIFACT_SET_MISMATCH")
++        for name in required:
++            p = directory / name
++            if p.is_symlink() or not p.is_file() or sha(p.read_bytes()) != manifest["files"][name]:
++                raise EvidenceError("RESEARCH_INTEGRITY_MISMATCH")
++    except (OSError, ValueError, KeyError, TypeError) as exc:
++        if isinstance(exc, EvidenceError):
++            raise
++        raise EvidenceError("RESEARCH_EVIDENCE_UNAVAILABLE") from None
++
++
++def freeze_case(source: Path, cfg: Config, case_id: str, output: Path):
++    checked_id(case_id)
++    raw = source.read_bytes()
++    frozen, _ = frozen_inputs(raw, cfg)
++    frozen["simulated_fault"] = None
++    case = {"schema": "research-case-v1", "case_id": case_id,
++            "input_id": sha(encoded(frozen)), "input": frozen,
++            "scope": "isolated_research_only", "cio_integrated": False}
++    folder = output / "cases" / case_id
++    if folder.exists():
++        previous = load_case(output, case_id)
++        if previous != case:
++            raise EvidenceError("FROZEN_CASE_CONFLICT: create a new case")
++        return {"status": "succeeded", "case_id": case_id, "input_id": case["input_id"], "reused": True}
++    folder.parent.mkdir(parents=True, exist_ok=True)
++    try:
++        folder.mkdir()
++    except FileExistsError:
++        raise EvidenceError("CASE_IN_PROGRESS") from None
++    write_new(folder / "case.json", case)
++    with (folder / "snapshot.json").open("xb") as stream:
++        stream.write(raw)
++    seal(folder)
++    return {"status": "succeeded", "case_id": case_id, "input_id": case["input_id"]}
++
++
++def load_case(output: Path, case_id: str):
++    folder = output / "cases" / checked_id(case_id)
++    check_seal(folder, {"case.json", "snapshot.json"})
++    case = read_json(folder / "case.json")
++    try:
++        if case["schema"] != "research-case-v1" or case["case_id"] != case_id:
++            raise EvidenceError("CASE_IDENTITY_MISMATCH")
++        if case["input_id"] != sha(encoded(case["input"])):
++            raise EvidenceError("CASE_INPUT_MISMATCH")
++        if case["input"]["snapshot_sha256"] != sha((folder / "snapshot.json").read_bytes()):
++            raise EvidenceError("CASE_SNAPSHOT_MISMATCH")
++    except (KeyError, TypeError):
++        raise EvidenceError("INVALID_CASE_SCHEMA") from None
++    return case
++
++
++def gate(output: Path, case_id: str, run_id: str):
++    case = load_case(output, case_id)
++    # Old cases remain readable via load_case, but cannot be used under new code.
++    if case["input"]["code"] != code_identity():
++        raise EvidenceError("CASE_CODE_STALE: freeze a new case and recompute")
++    folder = output / "runs" / checked_id(run_id)
++    receipt = verify(folder)  # Failure is reported before any input mismatch.
++    verify(folder, case["input"])
++    return case, receipt
++
++
++def submit(output: Path, submission_id: str, case_id: str, run_id: str):
++    for value in (submission_id, case_id, run_id):
++        checked_id(value)
++    request = {"schema": "research-submission-v1", "submission_id": submission_id,
++               "case_id": case_id, "run_id": run_id}
++    request_id = sha(encoded(request))
++    folder = output / "submissions" / submission_id
++    if folder.exists():
++        check_seal(folder, {"request.json", "receipt.json"})
++        if read_json(folder / "request.json") != request:
++            log_call(output, submission_id, "research_idempotency_conflict", request_id)
++            raise EvidenceError("SUBMISSION_IDEMPOTENCY_CONFLICT")
++        previous = read_json(folder / "receipt.json")
++        # Reusing an acceptance must never bypass current integrity checks.
++        if previous["status"] == "succeeded":
++            consume(output, submission_id, case_id)
++        log_call(output, submission_id, "research_reused_" + previous["status"], request_id)
++        return {**previous, "reused": True}
++    folder.parent.mkdir(parents=True, exist_ok=True)
++    try:
++        folder.mkdir()
++    except FileExistsError:
++        raise EvidenceError("SUBMISSION_IN_PROGRESS") from None
++    write_new(folder / "request.json", request)
++    receipt = {**request, "request_id": request_id, "created_at": timestamp(),
++               "scope": "isolated_research_only", "cio_integrated": False}
++    try:
++        case, result = gate(output, case_id, run_id)
++        receipt.update(status="succeeded", input_id=case["input_id"], result_id=result["result_id"],
++                       downstream_eligible=True)
++    except EvidenceError as exc:
++        receipt.update(status="rejected", reason=str(exc), downstream_eligible=False)
++    except (OSError, ValueError, TypeError, KeyError):
++        receipt.update(status="rejected", reason="INVALID_RESEARCH_EVIDENCE", downstream_eligible=False)
++    write_new(folder / "receipt.json", receipt)
++    seal(folder)
++    log_call(output, submission_id, "research_" + receipt["status"], request_id)
++    return receipt
++
++
++def consume(output: Path, submission_id: str, current_case_id: str):
++    folder = output / "submissions" / checked_id(submission_id)
++    checked_id(current_case_id)
++    check_seal(folder, {"request.json", "receipt.json"})
++    receipt = read_json(folder / "receipt.json")
++    request = read_json(folder / "request.json")
++    if (receipt.get("request_id") != sha(encoded(request)) or
++            any(receipt.get(k) != v for k, v in request.items())):
++        raise EvidenceError("SUBMISSION_BINDING_MISMATCH")
++    if receipt.get("status") != "succeeded":
++        raise EvidenceError("SUBMISSION_NOT_SUCCEEDED")
++    if request["case_id"] != current_case_id:
++        log_call(output, submission_id, "research_read_rejected_current_case", receipt["request_id"])
++        raise EvidenceError("CURRENT_CASE_MISMATCH: historical acceptance is not current")
++    try:
++        case, result = gate(output, current_case_id, request["run_id"])
++        if receipt.get("input_id") != case["input_id"] or receipt.get("result_id") != result["result_id"]:
++            raise EvidenceError("ACCEPTED_RESULT_BINDING_MISMATCH")
++    except EvidenceError:
++        log_call(output, submission_id, "research_read_rejected_evidence", receipt["request_id"])
++        raise
++    log_call(output, submission_id, "research_read_verified", receipt["request_id"])
++    return {**receipt, "verified_at": timestamp(), "check_scope": "current_case_and_live_integrity"}
+diff --git a/etf_lab/report.py b/etf_lab/report.py
+index 1585240..0c6243c 100644
+--- a/etf_lab/report.py
++++ b/etf_lab/report.py
+@@ -57,7 +57,7 @@ def render(directory: Path, result: dict, cfg: Config, snapshot: dict, receipt:
+     html = f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SPY 回测审计报告</title>
+ <style>*{{box-sizing:border-box}}body{{margin:0;color:#203737;background:#eff4f2;font:15px/1.65 "Microsoft YaHei",system-ui,sans-serif}}main{{max-width:1280px;margin:auto;padding:44px 32px 80px}}header{{margin-bottom:28px}}.eyebrow{{font-size:12px;letter-spacing:2px;color:#567570}}h1{{font-size:36px;line-height:1.2;margin:12px 0}}h2{{font-size:22px;margin:0 0 14px}}p{{margin:10px 0}}.muted{{color:#687b76}}.badge{{display:inline-block;font-size:12px;border-radius:4px;background:#d6eeE5;color:#185f4d;padding:4px 10px}}.warning{{background:#f6e7c7;color:#79541f}}.note{{border-left:4px solid #b68e50;padding:14px 18px;background:#fff9ed;margin:24px 0}}section{{background:white;border:1px solid #dce5e1;border-radius:9px;padding:26px;margin:22px 0}}.cards{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}}.card{{background:#fff;padding:18px;border:1px solid #dce5e1;border-radius:8px}}.card span{{display:block;color:#688078;font-size:12px}}.card strong{{display:block;font-size:25px;margin-top:8px;font-weight:600}}img{{width:100%;height:auto}}.scroll{{overflow:auto;max-height:550px}}table{{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums}}th,td{{border-bottom:1px solid #e8edeb;padding:10px 12px;text-align:right;white-space:nowrap}}th{{position:sticky;top:0;background:#eaf2ef;color:#426358}}th:first-child,td:first-child{{text-align:left}}tr:nth-child(even){{background:#fafcfb}}pre{{padding:16px;background:#f1f5f3;overflow:auto;white-space:pre-wrap;word-break:break-word;font:12px/1.7 Consolas,monospace}}summary{{cursor:pointer;font-weight:600;padding:6px 0}}a{{color:#087d78}}@media(max-width:700px){{main{{padding:24px 14px}}.cards{{grid-template-columns:repeat(2,1fr)}}h1{{font-size:28px}}section{{padding:18px}}}}@media print{{body{{background:white}}main{{padding:0}}section{{break-inside:avoid}}.scroll{{max-height:none}}}}</style></head><body><main>
+ <header><div class="eyebrow">ETF RESEARCH / AUDITABLE BACKTEST</div><h1>SPY 均线择时 · 回测审计报告</h1><p class="muted">{escape(cfg.start)} — {escape(cfg.end)} · SMA {cfg.fast}/{cfg.slow} · 初始资金 ${cfg.initial_cash:,.0f}</p>{synthetic}</header>
+-<div class="note"><strong>本地回测报告；完整项目验收尚未完成。</strong><br>原项目简化算法对比、机构文章数字复现及真实 CIO 三场景接入均待补齐。本页的简化参考为本地新建，不代表原项目算法。</div>
++<div class="note"><strong>可逐笔复核的 ETF 样板；任务二采用用户确认的独立研究可靠性验收范围。</strong><br>真实现有算法对照、机构论文重放与三场景证据在配套交付目录。本页曲线中的简化参考为本地诊断；没有接入任何现有 CIO。</div>
+ <div class="cards">{cards}</div>
+ <section><h2>净值曲线</h2><p class="muted">净值由现金与持仓逐日重建。末期未平仓按收盘估值，不虚构清仓。</p><img alt="SPY 逐笔账本与本地简化参考净值曲线" src="data:image/png;base64,{image}"></section>
+ <section><h2>规则与成交时序</h2><p>收盘后快均线上穿慢均线发出买入，反向交叉发出卖出，下一交易日开盘成交；初始为空仓。</p><pre>after close[t]:
+@@ -74,6 +74,6 @@ at close[t+1]: equity = cash + shares × unadjusted close</pre><p>样本前数
+ <section><h2>逐日账本 · {len(result['daily'])} 个交易日</h2><details><summary>展开信号、现金、持仓、净值与现金勾稽</summary>{daily}</details></section>
+ <section><h2>公司行动与拒单</h2><details><summary>展开分红 / 拆股事件（{len(result['corporate_actions'])}）</summary>{events}</details><p>现金不足拒单：{len(result['rejected_orders'])} 笔。</p><pre>{escape(json.dumps(result['rejected_orders'],ensure_ascii=False,indent=2))}</pre></section>
+ <section><h2>数据与可追溯信息</h2><p>来源：{escape(snapshot['source'])} · 精度：日线 · 抓取：{escape(snapshot['observed_at'])} · 数据截止：{escape(snapshot['data_cutoff'])}。</p><p>{escape(snapshot['price_basis'])}</p><p><strong>分红简化：</strong>数据没有实际支付日，本实验明确假设除息日现金到账，可能提前增加可投资现金。没有把 Adj Close 收益与分红现金重复计入。历史价格为当前下载版本，不能证明历史当时可见的数据版本。</p><p>输入标识：<code>{escape(receipt['input_id'])}</code><br>运行标识：<code>{escape(receipt['run_id'])}</code></p><p>旁附 input.json、snapshot.json、result.json、receipt.json、integrity.json 供离线复算与校验。</p><pre>{escape(json.dumps(cfg.to_dict(), ensure_ascii=False, indent=2))}</pre></section>
+-<section><h2>验收状态与边界</h2><p>五类金融边界测试与本地证据测试的实际输出见交付目录；报告生成成功不等于 CIO 接入成功。</p><ul><li>原简化算法：待提供源码与指定版本。</li><li>机构复现 ≤10%：尚未通过；未用不同比较口径凑数字。</li><li>CIO 适用性、失败恢复、幂等及篡改阻断：待通过原项目真实入口验证。</li><li>ETF 样板不证明美股选股回测可信；历史成分股、退市与财报历史版本问题未解决。</li><li>本策略不调用 LLM。若以后加入历史 LLM 决策，需单独处理模型未来知识污染。</li><li>仅研究实验，无真实持仓、下单、CRO 或审批写入。</li></ul><p class="muted">数据接口口径参见 <a href="https://ranaroussi.github.io/yfinance/reference/api/yfinance.download.html">yfinance 官方文档</a>。行情版权与使用范围由原数据提供方规定。</p></section>
++<section><h2>验收状态与边界</h2><p>五类金融边界、实际算法对照、机构重放及研究交接测试见交付目录；本次运行成功仍须经当前案例提交和读取校验。</p><ul><li>现有算法：使用固定版本 finresearch-lab，明确标注与 SMA20/50 不同的策略和费用口径。</li><li>机构重放：Glenn SPY/TLT 原文三项精确数字及偏差见配套报告；与本页 SMA20/50 分开运行。Cambria 因缺交易次数，保留为未通过的候选。</li><li>任务二：独立研究结果契约；无原 CIO 集成声明。</li><li>ETF 样板不证明美股选股回测可信；历史成分股、退市与财报历史版本问题未解决。</li><li>本策略不调用 LLM。若以后加入历史 LLM 决策，需单独处理模型未来知识污染。</li><li>仅研究实验，无真实持仓、下单、CRO 或审批写入。</li></ul><p class="muted">数据接口口径参见 <a href="https://ranaroussi.github.io/yfinance/reference/api/yfinance.download.html">yfinance 官方文档</a>。行情版权与使用范围由原数据提供方规定。</p></section>
+ </main></body></html>'''
+     (directory / "report.html").write_text(html, encoding="utf-8")
+diff --git a/scripts/compare_existing.py b/scripts/compare_existing.py
+new file mode 100644
+index 0000000..53f4b21
+--- /dev/null
++++ b/scripts/compare_existing.py
+@@ -0,0 +1,101 @@
++"""Run the actual frozen neighboring algorithm, with an explicit strategy mismatch."""
++import argparse
++import ast
++import html
++import json
++import math
++from pathlib import Path
++import sys
++
++import numpy as np
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++from etf_lab.artifacts import encoded, read_json, sha, write_new
++from etf_lab.engine import Config, metrics, run_backtest
++
++
++def load_existing():
++    location = ROOT / "vendor/finresearch-lab"
++    provenance = read_json(location / "provenance.json")
++    raw = (location / "benchmark.py").read_bytes()
++    if sha(raw) != provenance["sha256"]:
++        raise ValueError("Frozen original source hash mismatch")
++    names = {"weights", "rebalance_cost", "attribution", "summarize", "simulate"}
++    tree = ast.parse(raw)
++    nodes = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in names
++             or isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "PROTOCOL" for t in n.targets)]
++    assert len(nodes) == len(names) + 1
++    module = ast.Module(body=nodes, type_ignores=[])
++    namespace = {"np": np, "math": math}
++    exec(compile(module, str(location / "benchmark.py"), "exec"), namespace)
++    return namespace, provenance
++
++
++def main():
++    parser = argparse.ArgumentParser()
++    parser.add_argument("--output", type=Path, required=True)
++    args = parser.parse_args()
++    if args.output.exists(): raise SystemExit("Choose a new output directory")
++    cfg = Config(**read_json(ROOT / "config/spy.json"))
++    snapshot = read_json(ROOT / "data/spy.json")
++    original, provenance = load_existing()
++    rows = snapshot["provider_rows"]
++    dates = [r["date"] for r in rows]
++    adjusted_close = np.array([[r["Adj Close"]] for r in rows])
++    adjusted_open = np.array([[r["Open"] * r["Adj Close"] / r["Close"]] for r in rows])
++    start_index = dates.index(cfg.start) - 1
++    results = {}
++    for strategy in ("market", "momentum"):
++        ledger, _ = original["simulate"](["SPY"], dates, adjusted_open, adjusted_close, "SPY", strategy,
++                                          one_way=.0015, start_index=start_index)
++        assert ledger[0]["execution_date"] == cfg.start and ledger[-1]["end_date"] == cfg.end
++        stats = original["summarize"](ledger, 252)
++        results[strategy] = {"metrics": stats, "ledger": ledger,
++                             "order_days_plus_terminal": sum(r["turnover"] > 1e-12 for r in ledger[:-1]) +
++                             int(ledger[-1]["turnover"] > 1e-12)}
++    # Independently check the original buy-and-hold math, including both fees.
++    p0, p1 = float(adjusted_open[start_index+1, 0]), float(adjusted_open[-1, 0])
++    fractional_units = cfg.initial_cash / (p0 * 1.0015)
++    independent_ending = fractional_units * p1 * .9985
++    original_ending = cfg.initial_cash * (1 + results["market"]["metrics"]["net_total_return"])
++    assert abs(independent_ending - original_ending) < 1e-6
++    audited = run_backtest(snapshot, cfg)
++    # Same open-to-open evaluation endpoints; keep the official close-marked report unchanged.
++    aligned = [{"date": d["date"], "equity": d["cash_before"] + d["dividend_cash"] +
++                d["shares_before"] * d["open"]} for d in audited["daily"]][1:]
++    assert len(aligned) == len(results["market"]["ledger"])
++    aligned_metrics = metrics(aligned, cfg.initial_cash, cfg,
++                              [t["realized_pnl"] for t in audited["trades"] if t["side"] == "SELL"],
++                              len(audited["trades"]))
++    report = {"scope": "Actual existing algorithm comparison; strategy differences are explicit",
++              "existing_source": provenance, "script_sha256": sha(Path(__file__).read_bytes()),
++              "snapshot_sha256": sha((ROOT / "data/spy.json").read_bytes()),
++              "interval": {"start": cfg.start + " open", "end": cfg.end + " open", "symbol": "SPY"},
++              "existing_protocol": original["PROTOCOL"], "existing_results": results,
++              "new_sma_aligned_metrics": aligned_metrics, "new_sma_open_equity": aligned,
++              "independent_market_check": {"original_ending": original_ending, "independent_ending": independent_ending,
++                                            "absolute_difference": abs(independent_ending-original_ending)},
++              "limitations": ["Existing momentum is 20-day positive momentum at 50% weight, rebalanced every five sessions; not SMA20/50.",
++                              "Existing adjusted-price fractional exposure embeds distribution reinvestment and terminal liquidation; new ledger uses cash dividends, integer shares and no terminal sale.",
++                              "Existing one-way cost 15bp differs from the sample's 5bp slippage plus $1 fee; differences are not isolated implementation error.",
++                              "Existing source has no closed-trade PnL or win rate; unavailable values are not invented."]}
++    write_new(args.output / "comparison.json", report)
++    metrics_table = []
++    for name, m in [("逐笔 SMA20/50", aligned_metrics)] + [("原算法 " + n, x["metrics"]) for n, x in results.items()]:
++        metrics_table.append('<tr><td>' + name + '</td>' + ''.join('<td>' + f'{m[k]:.4%}' + '</td>' for k in
++             (("total_return", "annualized_return", "max_drawdown") if name.startswith("逐笔") else
++              ("net_total_return", "annualized_return", "max_drawdown"))) + '</tr>')
++    page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>现有算法对照</title><style>body{font:16px system-ui;max-width:1000px;margin:40px auto;color:#203737}td,th{padding:14px;border-bottom:1px solid #ddd;text-align:right}pre{white-space:pre-wrap;overflow-wrap:anywhere}aside{padding:18px;background:#fff5dd}</style><h1>与真实现有算法的差异对照</h1>'
++    page += '<p>同标的 SPY、同冻结数据、2015-01-02 开盘至 2025-12-31 开盘。正式主报告仍按收盘估值。</p>'
++    page += '<aside>这里调用固定版本 finresearch-lab 的原始数值函数。原动量策略与 SMA20/50 的规则不同，所以结果差异不能全部归因于回测算法错误。</aside>'
++    page += '<table><tr><th>方案</th><th>累计收益</th><th>年化收益</th><th>最大回撤</th></tr>' + ''.join(metrics_table) + '</table>'
++    page += '<h2>口径差异</h2><ul>' + ''.join('<li>'+html.escape(x)+'</li>' for x in report['limitations']) + '</ul>'
++    page += '<h2>原算法买入持有独立复核</h2><pre>'+html.escape(json.dumps(report['independent_market_check'],indent=2))+'</pre>'
++    page += '<p>完整原始版本、逐日输出及输入哈希见 <a href="comparison.json">comparison.json</a>。</p></html>'
++    (args.output / "report.html").write_text(page, encoding="utf-8")
++    write_new(args.output / "integrity.json", {"files": {p.name: sha(p.read_bytes()) for p in args.output.iterdir()}})
++    print(json.dumps({"status":"succeeded","source_commit":provenance["commit"],"independent_check":report["independent_market_check"]}))
++
++
++if __name__ == "__main__": main()
+diff --git a/scripts/demo_reliability.py b/scripts/demo_reliability.py
+new file mode 100644
+index 0000000..1c425c8
+--- /dev/null
++++ b/scripts/demo_reliability.py
+@@ -0,0 +1,119 @@
++"""Executable three-scenario acceptance for the user-approved independent scope."""
++import argparse
++from copy import deepcopy
++from dataclasses import replace
++import html
++import json
++from pathlib import Path
++import shutil
++import sys
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++sys.path.insert(0, str(ROOT / "tests"))
++from fixtures import sample
++from etf_lab.artifacts import EvidenceError, execute, read_json, write_new
++from etf_lab.handoff import consume, freeze_case, submit
++
++
++def main():
++    parser = argparse.ArgumentParser()
++    parser.add_argument("--output", type=Path, required=True)
++    output = parser.parse_args().output
++    if output.exists(): raise SystemExit("Choose a NEW isolated directory; never overwrite evidence")
++    snapshot, cfg = sample()
++    source = output / "fixtures/spy.json"
++    write_new(source, snapshot)
++    write_new(output / "fixtures/config.json", cfg.to_dict())
++    records = []
++
++    def rejection(label, action, code):
++        try: action()
++        except EvidenceError as exc:
++            assert code in str(exc), str(exc)
++            records.append({"scenario": label, "status": "PASS", "rejection": str(exc)})
++        else: raise AssertionError(label + " unexpectedly accepted")
++
++    freeze_case(source, cfg, "baseline", output)
++    old = execute(source, cfg, "original", output)
++    accepted = submit(output, "original", "baseline", "original")
++    assert accepted["status"] == consume(output, "original", "baseline")["status"] == "succeeded"
++    original_bytes = (output / "runs/original/result.json").read_bytes()
++    variants = [("parameters", source, replace(cfg, fast=1)), ("fees", source, replace(cfg, fee_fixed=1))]
++    for name in ("data", "source"):
++        altered = deepcopy(snapshot)
++        if name == "data": altered["bars"][0]["volume"] += 1
++        else: altered["source"] = "SIMULATED_OTHER_PROVIDER"
++        path = output / f"fixtures/{name}.json"
++        write_new(path, altered)
++        assert altered["source_url"] == snapshot["source_url"]
++        variants.append((name, path, cfg))
++    for name, path, config in variants:
++        freeze_case(path, config, name, output)
++        stale = submit(output, "stale-" + name, name, "original")
++        assert stale["status"] == "rejected" and not stale["downstream_eligible"]
++        assert "INPUT_MISMATCH" in stale["reason"]
++        rejection("1/read/" + name, lambda: consume(output, "original", name), "CURRENT_CASE_MISMATCH")
++        new = execute(path, config, name, output)
++        assert new["input_id"] != old["input_id"]
++        assert submit(output, name, name, name)["status"] == "succeeded"
++        assert consume(output, name, name)["downstream_eligible"]
++        records.append({"scenario": "1/submit-and-recover/" + name, "status": "PASS",
++                        "old_input_id": old["input_id"], "new_input_id": new["input_id"],
++                        "new_result_id": new["result_id"], "rejection": stale["reason"]})
++    assert original_bytes == (output / "runs/original/result.json").read_bytes()
++    for fault in ("data", "compute"):
++        failed = execute(source, cfg, "failed-" + fault, output, fault)
++        assert failed["simulated"] and failed["status"] == "failed" and "result_id" not in failed
++        refused = submit(output, "failed-" + fault, "baseline", "failed-" + fault)
++        assert refused["status"] == "rejected" and "result_id" not in refused
++        rejection("2/read/" + fault, lambda: consume(output, "failed-" + fault, "baseline"), "SUBMISSION_NOT_SUCCEEDED")
++        recovery = execute(source, cfg, "recovered-" + fault, output)
++        assert submit(output, "recovered-" + fault, "baseline", "recovered-" + fault)["status"] == "succeeded"
++        assert consume(output, "recovered-" + fault, "baseline")["status"] == "succeeded"
++        assert read_json(output / f"runs/failed-{fault}/receipt.json")["status"] == "failed"
++        records.append({"scenario": "2/failure-and-recovery/" + fault, "status": "PASS", "failure": failed,
++                        "refusal": refused["reason"], "recovery_run_id": recovery["run_id"]})
++    repeated = execute(source, cfg, "original", output)
++    duplicate = submit(output, "original", "baseline", "original")
++    assert repeated["reused"] and duplicate["reused"]
++    assert len(list((output / "submissions/original").glob("receipt.json"))) == 1
++    rejection("3/submission-conflict", lambda: submit(output, "original", "fees", "fees"), "IDEMPOTENCY_CONFLICT")
++    rejection("3/run-conflict", lambda: execute(source, replace(cfg, fee_fixed=1), "original", output), "INPUT_MISMATCH")
++    rerun = execute(source, cfg, "explicit-recompute", output)
++    assert rerun["result_id"] == old["result_id"]
++    assert submit(output, "explicit-recompute", "baseline", "explicit-recompute")["status"] == "succeeded"
++    records.append({"scenario": "3/idempotency", "status": "PASS", "valid_results_for_original_key": 1,
++                    "valid_handoffs_for_original_key": 1, "second_action": "reused_succeeded",
++                    "recompute_run_id": rerun["run_id"]})
++    tampered = output / "tampered-copy"
++    tampered.mkdir()
++    for part in ("runs", "cases", "submissions"):
++        shutil.copytree(output / part, tampered / part)
++    (tampered / "runs/original/result.json").write_text('{"tampered":true}', encoding="utf-8")
++    rejection("3/consume-tampered", lambda: consume(tampered, "original", "baseline"), "INTEGRITY_MISMATCH")
++    rejection("3/reuse-tampered", lambda: submit(tampered, "original", "baseline", "original"), "INTEGRITY_MISMATCH")
++    assert consume(output, "original", "baseline")["status"] == "succeeded"
++    receipts = [read_json(p) for p in (output / "submissions").glob("*/receipt.json")]
++    summary = {"scope": "User-approved independent research reliability acceptance; no existing CIO integrated",
++               "status": "passed", "synthetic_data": True, "scenario_count": 3,
++               "assertion_records": len(records), "records": records,
++               "accepted_handoffs": sum(r["status"] == "succeeded" for r in receipts),
++               "rejected_handoffs": sum(r["status"] == "rejected" for r in receipts),
++               "failed_runs": 2, "original_history_preserved": True}
++    write_new(output / "summary.json", summary)
++    cards = "".join('<article><b>' + html.escape(r["scenario"]) + '</b><span>PASS</span><pre>' +
++                    html.escape(json.dumps(r, ensure_ascii=False, indent=2)) + '</pre></article>' for r in records)
++    page = '''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>研究结果可靠性验收</title>
++<style>body{font:16px system-ui;background:#edf3f2;color:#152c2b;margin:36px auto;max-width:1100px}h1{font-size:34px}
++.banner,article{background:white;padding:22px;border-radius:10px;margin:18px 0}span{float:right;color:#087a48;font-weight:bold}
++pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px monospace;color:#374c51}a{color:#086b62}</style>
++<h1>研究结果可靠性 · 三场景验收</h1><div class="banner"><strong>3 / 3 场景通过 · 隔离合成数据</strong>
++<p>按用户确认的独立验收范围：提交与读取都会重新校验。没有接入现有 CIO，也不连接投资审批或交易。</p>
++<p>参数、数据、来源、费用改变 → 拒用历史结果；模拟失败 → 阻断交接 → 新运行恢复；重复复用、冲突拒绝、篡改发现。</p>
++<a href="summary.json">完整断言与标识 JSON</a> · <a href="calls.jsonl">实际调用日志</a></div>''' + cards
++    (output / "report.html").write_text(page + '</html>', encoding="utf-8")
++    print(json.dumps(summary, ensure_ascii=True, indent=2))
++
++
++if __name__ == "__main__": main()
+diff --git a/scripts/fetch_paired_data.py b/scripts/fetch_paired_data.py
+new file mode 100644
+index 0000000..179bfda
+--- /dev/null
++++ b/scripts/fetch_paired_data.py
+@@ -0,0 +1,32 @@
++"""One-time source download for the independent institutional replication."""
++from datetime import datetime, timezone
++import json
++from pathlib import Path
++import sys
++
++import yfinance as yf
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++from etf_lab.artifacts import write_new
++
++target = ROOT / "data/paired-spy-tlt.json"
++if target.exists(): raise SystemExit("Frozen snapshot already exists; choose a new version explicitly")
++yf.set_tz_cache_location(str(ROOT / ".cache/yfinance"))
++assets = {}
++for symbol in ("SPY", "TLT"):
++    frame = yf.Ticker(symbol).history(start="2003-01-01", end="2014-01-01", interval="1d",
++                                     auto_adjust=False, back_adjust=False, actions=True, repair=False,
++                                     keepna=True, raise_errors=True, timeout=30)
++    if frame.empty or frame.isna().any().any(): raise ValueError("Incomplete provider data")
++    assets[symbol] = [{"date": str(index.date()), **{column: float(row[column]) for column in frame.columns}}
++                      for index, row in frame.iterrows()]
++if [r["date"] for r in assets["SPY"]] != [r["date"] for r in assets["TLT"]]:
++    raise ValueError("Mismatched sessions; no silent intersection")
++write_new(target, {"schema": "paired-institution-bars-v1", "source": "yfinance / Yahoo Finance",
++                  "source_urls": {s: "https://finance.yahoo.com/quote/"+s+"/history/" for s in assets},
++                  "observed_at": datetime.now(timezone.utc).isoformat(), "provider_version": yf.__version__,
++                  "interval": "1d", "coverage": ["2003-01-01", "2013-12-31"],
++                  "price_basis": "Raw returned OHLC plus Adj Close. Replication uses Adj Close total-return ratios; never adds cash dividends again.",
++                  "data_vintage": "Current downloaded history, not point-in-time historical vintage", "assets": assets})
++print(json.dumps({"status":"succeeded","rows_per_asset":{s:len(v) for s,v in assets.items()}}))
+diff --git a/scripts/replicate_institution.py b/scripts/replicate_institution.py
+new file mode 100644
+index 0000000..590b712
+--- /dev/null
++++ b/scripts/replicate_institution.py
+@@ -0,0 +1,100 @@
++"""Predeclared Cambria 2000s replication attempt; never optimize to pass a threshold."""
++import argparse
++import html
++import json
++from pathlib import Path
++import sys
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++from etf_lab.artifacts import read_json, sha, write_new
++
++SOURCE = "https://www.cambriainvestments.com/wp-content/uploads/2018/01/A-Quantitative-Approach-to-Tactical-Asset-Allocation.pdf"
++REFERENCE = {"annualized_return": .0773, "max_drawdown": -.0682, "round_trip_count": None}
++
++
++def replay(snapshot, risk_free):
++    # Fixed rule from paper: total-return month-end series; 10-month SMA;
++    # month-end signal changes exposure for the following month's return.
++    month_ends = {}
++    for row in snapshot["provider_rows"]:
++        month_ends[row["date"][:7]] = row
++    ordered = sorted(month_ends)
++    if sorted(month_ends) != [f"{year}-{month:02d}" for year in range(1998, 2010) for month in range(1, 13)]:
++        raise ValueError("Incomplete monthly panel")
++    values = [month_ends[m]["Adj Close"] for m in ordered]
++    signals, previous = [], 0
++    for i, price in enumerate(values):
++        if i < 9:
++            signals.append(None)
++            continue
++        average = sum(values[i-9:i+1])/10
++        previous = 1 if price > average else 0 if price < average else previous
++        signals.append(previous)
++    equity, peak, drawdown, trades, ledger = 1., 1., 0., [], []
++    for i, month in enumerate(ordered):
++        if not "2000-01" <= month <= "2009-12": continue
++        held = signals[i-1]
++        rf = risk_free["monthly_rf"][month.replace("-", "")]
++        market = values[i] / values[i-1] - 1
++        ret = market if held else rf
++        equity *= 1 + ret
++        peak = max(peak, equity)
++        drawdown = min(drawdown, equity/peak - 1)
++        if signals[i] != held:
++            trades.append({"date": month_ends[month]["date"], "side": "BUY" if signals[i] else "SELL",
++                           "signal_total_return_level": values[i], "exposure_next_month": signals[i]})
++        ledger.append({"month": month, "held_during_month": held, "market_return": market,
++                       "cash_return": rf, "portfolio_return": ret, "equity": equity,
++                       "signal_after_month_end": signals[i]})
++    assert len(ledger) == 120
++    return {"metrics": {"annualized_return": equity ** .1 - 1, "max_drawdown": drawdown,
++                         "total_return": equity-1, "round_trip_count": sum(t["side"] == "SELL" for t in trades)},
++            "trade_count_convention": "Sell exits in interval, including closure of an inherited pre-2000 position; no terminal forced sale",
++            "inherited_exposure": ledger[0]["held_during_month"], "orders": trades, "ledger": ledger}
++
++
++def main():
++    p = argparse.ArgumentParser()
++    p.add_argument("--output", type=Path, required=True)
++    p.add_argument("--require-pass", action="store_true")
++    args = p.parse_args()
++    if args.output.exists(): raise SystemExit("Use a new output directory")
++    sp = ROOT / "data/spy-cambria-proxy.json"
++    rf = ROOT / "data/french-rf-cambria-proxy.json"
++    result = replay(read_json(sp), read_json(rf))
++    comparisons = []
++    for metric, reference in REFERENCE.items():
++        calculated = result["metrics"][metric]
++        deviation = abs(calculated-reference)/abs(reference) if reference not in (None, 0) else None
++        comparisons.append({"metric": metric, "reference": reference, "reproduced_proxy": calculated,
++                            "relative_deviation": deviation,
++                            "within_ten_percent": deviation <= .1 if deviation is not None else None})
++    report = {"status": "NOT_ACCEPTED", "article": {"url": SOURCE, "author": "Mebane T. Faber / Cambria Investment Management",
++              "title": "A Quantitative Approach to Tactical Asset Allocation", "version": "February 2013 update",
++              "page": 67, "table": "Appendix B, 2000s, TIMING column"},
++              "rule": "Month-end total-return price > 10-month SMA; otherwise Treasury bills; no fees/taxes/slippage",
++              "period": "2000-01 through 2009-12", "reference": REFERENCE, "comparisons": comparisons,
++              "input_hashes": {sp.name: sha(sp.read_bytes()), rf.name: sha(rf.read_bytes())},
++              "script_sha256": sha(Path(__file__).read_bytes()),
++              "reproduction": result,
++              "reasons": ["The article does not disclose an exact trade count for the chosen decade; no numeric deviation can be asserted.",
++                          "Original input: GFD S&P 500 total-return index and 90-day T-bill series; available proxy: SPY adjusted close and French one-month RF.",
++                          "This is a separately specified article replication attempt, not the SPY20/50 sample.",
++                          "Same-close monthly execution is an article assumption, not a claim of implementable fills; current-vintage data do not establish point-in-time availability."]}
++    if any(row["within_ten_percent"] is False for row in comparisons):
++        report["reasons"].insert(0, "At least one disclosed numerical metric exceeds the 10% relative deviation threshold.")
++    write_new(args.output / "replication.json", report)
++    table = ''.join('<tr><td>'+r['metric']+'</td><td>'+str(r['reference'])+'</td><td>'+str(round(r['reproduced_proxy'],6))+
++                    '</td><td>'+('未披露，不能验收' if r['relative_deviation'] is None else f"{r['relative_deviation']:.2%}")+'</td></tr>' for r in comparisons)
++    page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>机构论文复现核查</title><style>body{font:16px system-ui;max-width:1050px;margin:40px auto;color:#263938}td,th{padding:16px;border-bottom:1px solid #ddd}aside{background:#fff0d8;padding:20px}li{margin:12px 0}</style><h1>Cambria 机构论文 · 复现核查</h1><aside><strong>未通过完整验收</strong>：缺精确交易次数基准，数据采用明确标注的替代序列；不能写成“偏差≤10%全部通过”。</aside>'
++    page += '<p>论文 2013 年版，第 67 页 Appendix B，2000s TIMING；2000-01 至 2009-12，10 月均线，月末信号，下个月收益。</p>'
++    page += '<table><tr><th>指标（小数）</th><th>论文</th><th>替代数据重放</th><th>相对偏差</th></tr>'+table+'</table><ul>'+''.join('<li>'+html.escape(reason)+'</li>' for reason in report['reasons'])+'</ul>'
++    page += '<p><a href="'+SOURCE+'">机构原文 PDF</a> · <a href="replication.json">逐月账本、每次转换和全部输入哈希</a></p></html>'
++    (args.output / "report.html").write_text(page, encoding="utf-8")
++    write_new(args.output / "integrity.json", {"files": {f.name: sha(f.read_bytes()) for f in args.output.iterdir()}})
++    print(json.dumps({"status": report["status"], "comparisons": comparisons}, indent=2))
++    return 2 if args.require_pass else 0
++
++
++if __name__ == "__main__": sys.exit(main())
+diff --git a/scripts/replicate_paired.py b/scripts/replicate_paired.py
+new file mode 100644
+index 0000000..fbcaf5e
+--- /dev/null
++++ b/scripts/replicate_paired.py
+@@ -0,0 +1,128 @@
++"""Glenn paired switching: frozen published parameters, all three required metrics."""
++import argparse
++from datetime import date
++import html
++import json
++import math
++from pathlib import Path
++import sys
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++from etf_lab.artifacts import read_json, sha, write_new
++
++ARTICLE = "https://alphaarchitect.com/are-uber-simple-asset-allocation-systems-robust/"
++PAPER = "https://www.ifta.org/assets/docs/ifta_journal_2021.pdf"
++
++
++def replay(snapshot, config):
++    symbols = config["symbols"]
++    assets = snapshot["assets"]
++    dates = [r["date"] for r in assets[symbols[0]]]
++    if dates != sorted(set(dates)): raise ValueError("Duplicate or unordered dates")
++    if any([r["date"] for r in assets[s]] != dates for s in symbols):
++        raise ValueError("Missing or mismatched sessions")
++    prices = {s: [r["Adj Close"] for r in assets[s]] for s in symbols}
++    if any(not math.isfinite(p) or p <= 0 for ps in prices.values() for p in ps):
++        raise ValueError("Invalid adjusted close")
++    month_ends = {d[:7]: i for i, d in enumerate(dates)}
++    months = sorted(month_ends)
++    end_indices = set(month_ends.values())
++    selected = [i for i, d in enumerate(dates) if config["start"] <= d <= config["end"]]
++    if not selected or dates[selected[0]] != config["start"] or dates[selected[-1]] != config["end"]:
++        raise ValueError("Evaluation endpoints unavailable")
++    cash, units, held = float(config["initial_cash"]), 0., None
++    ledger, trades = [], []
++
++    def choose(index):
++        month_index = months.index(dates[index][:7])
++        old = month_ends[months[month_index-config["lookback_months"]]]
++        if month_index < config["lookback_months"]: raise ValueError("Insufficient warm-up")
++        ratios = {s: prices[s][index]/prices[s][old] for s in symbols}
++        return ("TLT" if ratios["TLT"] > ratios["SPY"] else "SPY"), ratios
++
++    for i in selected:
++        target, signal = held, None
++        if i == selected[0]:
++            previous_end = max(j for j in end_indices if j < i)
++            target, signal = choose(previous_end)
++        elif i in end_indices:
++            target, signal = choose(i)
++        if target != held:
++            if held is not None:
++                value = units * prices[held][i]
++                cash += value-config["fee_fixed_per_order"]
++                trades.append({"date": dates[i], "side": "SELL", "symbol": held, "adjusted_units": units,
++                               "adjusted_price": prices[held][i], "notional": value,
++                               "fee": config["fee_fixed_per_order"], "cash_after": cash})
++                units = 0.
++            units = (cash-config["fee_fixed_per_order"])/prices[target][i]
++            value = units*prices[target][i]
++            cash -= value + config["fee_fixed_per_order"]
++            trades.append({"date": dates[i], "side": "BUY", "symbol": target, "adjusted_units": units,
++                           "adjusted_price": prices[target][i], "notional": value,
++                           "fee": config["fee_fixed_per_order"], "cash_after": cash})
++            held = target
++        if cash < -1e-7 or units < 0: raise ArithmeticError("Negative cash or units")
++        equity = cash + units*prices[held][i]
++        ledger.append({"date": dates[i], "holding": held, "adjusted_units": units, "cash": cash,
++                       "equity": equity, "review_ratios": signal})
++    peak, mdd = config["initial_cash"], 0.
++    for row in ledger:
++        peak = max(peak, row["equity"])
++        mdd = min(mdd, row["equity"]/peak-1)
++    gain = ledger[-1]["equity"]/config["initial_cash"]
++    return {"metrics": {"total_return": gain-1, "annualized_return": gain**(config["annualization"]/len(ledger))-1,
++                         "max_drawdown": mdd, "order_count": len(trades)}, "observations": len(ledger),
++            "orders": trades, "daily": ledger, "total_fees": sum(t["fee"] for t in trades)}
++
++
++def main():
++    parser = argparse.ArgumentParser()
++    parser.add_argument("--output", type=Path, required=True)
++    args = parser.parse_args()
++    if args.output.exists(): raise SystemExit("Choose a new output directory")
++    data = ROOT / "data/paired-spy-tlt.json"
++    config_path = ROOT / "config/paired-replication.json"
++    config = read_json(config_path)
++    result = replay(read_json(data), config)
++    comparisons = [{"metric": key, "reference": value, "reproduced": result["metrics"][key],
++                    "relative_deviation": abs(result["metrics"][key]-value)/abs(value)}
++                   for key, value in config["reference"].items()]
++    for row in comparisons: row["passed"] = row["relative_deviation"] <= config["relative_tolerance"]
++    passed = all(row["passed"] for row in comparisons)
++    report = {"status": "passed" if passed else "failed", "reference_article": ARTICLE,
++              "primary_paper": {"url": PAPER, "title": "Simple and Effective Market Timing With Tactical Asset Allocation",
++                                "author": "Lewis A. Glenn", "publication": "IFTA Journal 2021",
++                                "printed_page": 95, "pdf_page": 97, "table": "Table 1, k=1 month, mu=3 months"},
++              "source_selection": "Alpha Architect's strategy research article discusses Glenn's paper; precise numbers are anchored to one row of the author's IFTA publication, not mixed with another backtest.",
++              "input_hashes": {data.name: sha(data.read_bytes()), config_path.name: sha(config_path.read_bytes())},
++              "script_sha256": sha(Path(__file__).read_bytes()), "config": config,
++              "comparisons": comparisons, "result": result,
++              "limits": ["This reproduces the SPY/TLT article model separately from the audited SPY20/50 sample.",
++                         "Article execution at signal close is replicated; it is not the next-open execution used by the main sample.",
++                         "Trade count means each BUY or SELL: one switch is two orders. No final artificial sale.",
++                         "Paper states nominal transaction costs but no amount; fixed $1 per order was declared before replay.",
++                         "Current-vintage Yahoo adjusted prices can differ from the author's historical inputs; distributions are embedded once, with no additional dividend cash.",
++                         "The paper abstract's 30% average annual return is not CAGR. Table 1 gives 14.6% CAGR; the same table gives 18.9% drawdown whereas body text rounds to 18.8%."]}
++    write_new(args.output / "replication.json", report)
++    import matplotlib
++    matplotlib.use("Agg")
++    import matplotlib.pyplot as plt
++    fig, ax = plt.subplots(figsize=(10, 3.5), dpi=140)
++    ax.plot([date.fromisoformat(d["date"]) for d in result["daily"]],
++            [d["equity"]/config["initial_cash"] for d in result["daily"]], color="#087d78")
++    ax.set(ylabel="Equity / initial capital", title="Published SPY/TLT paired-switching replication")
++    ax.grid(alpha=.15); fig.tight_layout(); fig.savefig(args.output/"nav.png"); plt.close(fig)
++    rows = ''.join('<tr><td>'+r['metric']+'</td><td>'+f"{r['reference']:.6f}"+'</td><td>'+f"{r['reproduced']:.6f}"+'</td><td>'+f"{r['relative_deviation']:.2%}"+'</td><td>'+str(r['passed'])+'</td></tr>' for r in comparisons)
++    page = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>机构三指标复现</title><style>body{font:16px system-ui;max-width:1080px;margin:40px auto;color:#203737}td,th{padding:14px;border-bottom:1px solid #ddd}li{margin:12px 0}aside{padding:20px;background:#e1f3e9}img{width:100%}</style><h1>机构文章对标 · SPY / TLT 配对轮动</h1><aside><b>'+('四项偏差均 ≤10%（含必需的收益、回撤、交易次数）' if passed else '未通过')+'</b><p>2004-01-02 — 2013-12-31 · 固定三个月动量 · 月末切换 · 本次没有参数搜索</p></aside>'
++    page += '<p>机构报道：<a href="'+ARTICLE+'">Alpha Architect</a>；精确数值来源：<a href="'+PAPER+'">Glenn 原文，IFTA 2021，第 95 页表 1 第一行</a>。收益与回撤在表中以小数显示。</p>'
++    page += '<table><tr><th>指标</th><th>原文精确值</th><th>本地复现</th><th>相对偏差</th><th>通过</th></tr>'+rows+'</table><img src="nav.png" alt="机构策略复现净值">'
++    page += '<h2>口径与限制</h2><ul>'+''.join('<li>'+html.escape(x)+'</li>' for x in report['limits'])+'</ul><p><a href="replication.json">全部逐日账本、订单、原文定位、冻结配置和数据哈希</a></p></html>'
++    (args.output / "report.html").write_text(page,encoding="utf-8")
++    write_new(args.output / "integrity.json", {"files": {p.name: sha(p.read_bytes()) for p in args.output.iterdir()}})
++    print(json.dumps({"status": report["status"], "observations": result["observations"], "comparisons": comparisons}, indent=2))
++    return 0 if passed else 2
++
++
++if __name__ == "__main__": sys.exit(main())
+diff --git a/tests/test_handoff.py b/tests/test_handoff.py
+new file mode 100644
+index 0000000..f11227b
+--- /dev/null
++++ b/tests/test_handoff.py
+@@ -0,0 +1,107 @@
++from copy import deepcopy
++from dataclasses import replace
++from pathlib import Path
++import tempfile
++import unittest
++from unittest.mock import patch
++
++from etf_lab.artifacts import EvidenceError, execute, read_json, write_new
++from etf_lab.handoff import consume, freeze_case, load_case, submit
++from fixtures import sample
++from test_artifacts import lightweight_report
++
++
++class ResearchContract(unittest.TestCase):
++    def setUp(self):
++        self.temp = tempfile.TemporaryDirectory()
++        self.root = Path(self.temp.name)
++        self.snapshot, self.cfg = sample()
++        self.source = self.root / "source.json"
++        write_new(self.source, self.snapshot)
++        self.renderer = patch("etf_lab.report.render", lightweight_report)
++        self.renderer.start()
++        freeze_case(self.source, self.cfg, "v1", self.root)
++        execute(self.source, self.cfg, "run1", self.root)
++        self.first = submit(self.root, "first", "v1", "run1")
++
++    def tearDown(self):
++        self.renderer.stop()
++        self.temp.cleanup()
++
++    def test_all_input_changes_block_submission_and_consumption(self):
++        original = (self.root / "runs/run1/result.json").read_bytes()
++        variants = [("parameter", self.source, replace(self.cfg, fast=1)),
++                    ("fee", self.source, replace(self.cfg, fee_fixed=1))]
++        for name in ("snapshot", "provider"):
++            altered = deepcopy(self.snapshot)
++            if name == "snapshot": altered["bars"][0]["volume"] += 1
++            else: altered["source"] = "SIMULATED_OTHER_SOURCE"
++            path = self.root / (name + ".json")
++            write_new(path, altered)
++            variants.append((name, path, self.cfg))
++        for name, source, cfg in variants:
++            with self.subTest(name=name):
++                freeze_case(source, cfg, name, self.root)
++                rejected = submit(self.root, "stale-" + name, name, "run1")
++                self.assertEqual(rejected["status"], "rejected")
++                self.assertIn("INPUT_MISMATCH", rejected["reason"])
++                self.assertFalse(rejected["downstream_eligible"])
++                with self.assertRaisesRegex(EvidenceError, "CURRENT_CASE_MISMATCH"):
++                    consume(self.root, "first", name)
++                execute(source, cfg, name, self.root)
++                self.assertEqual(submit(self.root, "new-" + name, name, name)["status"], "succeeded")
++                self.assertEqual(consume(self.root, "new-" + name, name)["status"], "succeeded")
++        self.assertEqual(original, (self.root / "runs/run1/result.json").read_bytes())
++        self.assertEqual(load_case(self.root, "v1")["case_id"], "v1")
++
++    def test_failure_never_advances_or_falls_back_and_recovery_preserves_failure(self):
++        for fault in ("data", "compute"):
++            failed = execute(self.source, self.cfg, fault, self.root, fault)
++            self.assertEqual(failed["status"], "failed")
++            rejected = submit(self.root, fault, "v1", fault)
++            self.assertIn("RUN_NOT_SUCCEEDED", rejected["reason"])
++            self.assertNotIn("result_id", rejected)
++            with self.assertRaisesRegex(EvidenceError, "SUBMISSION_NOT_SUCCEEDED"):
++                consume(self.root, fault, "v1")
++            execute(self.source, self.cfg, fault + "-recovered", self.root)
++            accepted = submit(self.root, fault + "-recovered", "v1", fault + "-recovered")
++            self.assertEqual(accepted["status"], "succeeded")
++            self.assertEqual(read_json(self.root / f"submissions/{fault}/receipt.json")["status"], "rejected")
++
++    def test_idempotency_one_acceptance_and_different_request_conflicts(self):
++        second = submit(self.root, "first", "v1", "run1")
++        self.assertTrue(second["reused"])
++        self.assertEqual(second["result_id"], self.first["result_id"])
++        self.assertEqual(len(list((self.root / "submissions").glob("*/receipt.json"))), 1)
++        execute(self.source, self.cfg, "forced-new-run", self.root)
++        with self.assertRaisesRegex(EvidenceError, "SUBMISSION_IDEMPOTENCY_CONFLICT"):
++            submit(self.root, "first", "v1", "forced-new-run")
++        self.assertEqual(submit(self.root, "forced-new-submission", "v1", "forced-new-run")["status"], "succeeded")
++
++    def test_cached_acceptance_does_not_bypass_tamper_check(self):
++        result = self.root / "runs/run1/result.json"
++        result.write_text('{"tampered":true}', encoding="utf-8")
++        for action in (lambda: consume(self.root, "first", "v1"),
++                       lambda: submit(self.root, "first", "v1", "run1")):
++            with self.assertRaisesRegex(EvidenceError, "INTEGRITY_MISMATCH"):
++                action()
++
++    def test_frozen_case_cannot_be_overwritten(self):
++        with self.assertRaisesRegex(EvidenceError, "FROZEN_CASE_CONFLICT"):
++            freeze_case(self.source, replace(self.cfg, fast=1), "v1", self.root)
++        self.assertTrue(freeze_case(self.source, self.cfg, "v1", self.root)["reused"])
++
++    def test_code_changes_reject_current_use_but_preserve_history(self):
++        with patch("etf_lab.handoff.code_identity", return_value={"changed": True}):
++            with self.assertRaisesRegex(EvidenceError, "CASE_CODE_STALE"):
++                consume(self.root, "first", "v1")
++            self.assertEqual(load_case(self.root, "v1")["case_id"], "v1")
++
++    def test_case_and_submission_corruption_rejected(self):
++        (self.root / "cases/v1/case.json").write_text('{}')
++        with self.assertRaisesRegex(EvidenceError, "RESEARCH_INTEGRITY_MISMATCH"):
++            consume(self.root, "first", "v1")
++
++    def test_invalid_identifier_rejected(self):
++        with self.assertRaisesRegex(EvidenceError, "INVALID_RESEARCH_ID"):
++            submit(self.root, "../escape", "v1", "run1")
+diff --git a/tests/test_replications.py b/tests/test_replications.py
+new file mode 100644
+index 0000000..3e34c93
+--- /dev/null
++++ b/tests/test_replications.py
+@@ -0,0 +1,61 @@
++from copy import deepcopy
++import unittest
++
++import numpy as np
++
++from etf_lab.artifacts import read_json
++from scripts.compare_existing import ROOT, load_existing
++from scripts.replicate_paired import replay
++
++
++class ExternalReplications(unittest.TestCase):
++    def test_original_source_matches_independent_two_sided_cost_identity(self):
++        original, _ = load_existing()
++        opening = np.linspace(100, 160, 80).reshape(-1, 1)
++        dates = [str(i) for i in range(80)]
++        rows, _ = original["simulate"](["SPY"], dates, opening, opening, "SPY", "market")
++        calculated = np.prod([1+r["net_return"] for r in rows])
++        independent = float(opening[-1, 0]/opening[21, 0]) * .9985/1.0015
++        self.assertAlmostEqual(calculated, independent, places=12)
++
++    def test_paired_future_prices_do_not_change_past_orders(self):
++        snapshot = read_json(ROOT/"data/paired-spy-tlt.json")
++        config = read_json(ROOT/"config/paired-replication.json")
++        original = replay(snapshot, config)
++        changed = deepcopy(snapshot)
++        for bar in changed["assets"]["SPY"]:
++            if bar["date"] >= "2010-01-01": bar["Adj Close"] *= 2
++        modified = replay(changed, config)
++        for field in ("orders", "daily"):
++            self.assertEqual([r for r in original[field] if r["date"] < "2010-01-01"],
++                             [r for r in modified[field] if r["date"] < "2010-01-01"])
++
++    def test_paired_orders_rebuild_daily_cash_units_and_equity(self):
++        snapshot = read_json(ROOT/"data/paired-spy-tlt.json")
++        config = read_json(ROOT/"config/paired-replication.json")
++        result = replay(snapshot, config)
++        prices = {s: {r["date"]: r["Adj Close"] for r in bars} for s,bars in snapshot["assets"].items()}
++        cash, units, held = config["initial_cash"], 0., None
++        by_date = {}
++        for order in result["orders"]: by_date.setdefault(order["date"], []).append(order)
++        for row in result["daily"]:
++            for order in by_date.get(row["date"], []):
++                amount = order["adjusted_units"] * prices[order["symbol"]][row["date"]]
++                if order["side"] == "SELL":
++                    self.assertEqual(held, order["symbol"])
++                    self.assertAlmostEqual(units, order["adjusted_units"])
++                    cash += amount-order["fee"]
++                    units, held = 0., None
++                else:
++                    self.assertIsNone(held)
++                    cash -= amount+order["fee"]
++                    units, held = order["adjusted_units"], order["symbol"]
++            self.assertGreaterEqual(cash, -1e-7)
++            self.assertAlmostEqual(cash+units*prices[held][row["date"]], row["equity"], places=7)
++        self.assertEqual(result["metrics"]["order_count"], len(result["orders"]))
++
++    def test_paired_missing_asset_session_fails_closed(self):
++        snapshot = read_json(ROOT/"data/paired-spy-tlt.json")
++        snapshot["assets"]["TLT"].pop(100)
++        with self.assertRaisesRegex(ValueError,"Missing or mismatched"):
++            replay(snapshot, read_json(ROOT/"config/paired-replication.json"))

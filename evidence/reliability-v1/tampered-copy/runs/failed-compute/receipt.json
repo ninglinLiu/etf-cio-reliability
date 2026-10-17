@@ -1,0 +1,14 @@
+{
+  "cio_integration": "outside_user_approved_independent_scope",
+  "created_at": "2026-10-17T05:01:54.426735+00:00",
+  "error_code": "CALCULATION_FAILED",
+  "exception_type": "ArithmeticError",
+  "failed_stage": "calculation",
+  "input_id": "facbb4bd7fe4ae1451337b64f70cd66316f2248e471cc45f2b6f1730fa65df61",
+  "reason": "SIMULATED: Calculation did not complete; no successful result is available.",
+  "run_id": "failed-compute",
+  "schema": "etf-result-receipt-v1",
+  "scope": "local_research_only",
+  "simulated": true,
+  "status": "failed"
+}

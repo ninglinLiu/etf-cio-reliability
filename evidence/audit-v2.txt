@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "days_reconstructed": 2766,
+  "fills_reconstructed": 53,
+  "ending_equity": 234945.88919436675,
+  "max_absolute_residual": 0
+}

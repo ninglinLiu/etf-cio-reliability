@@ -63,3 +63,26 @@
    SPY 20/50 日线规则不能与不同品种、不同期限或多资产期货策略强行比较。
 
 所有改动留在 `experiment/spy-backtest-reliability`，不合并主分支。无真实持仓、成交、CRO、审批或交易执行访问。
+
+## 独立研究交接契约 v1（实际实现）
+
+存储位于调用者指定的隔离 output 目录，无数据库迁移。
+
+| 路径 | 作用 | 不可覆盖约束 |
+|---|---|---|
+| cases/<case_id>/case.json + snapshot.json | 冻结 input_id 与完整快照；含 schema=research-case-v1 | 同案例不同输入拒绝，改输入必须新案例 |
+| runs/<run_id>/ | 既有单次计算输入、结果、成功/失败回执、HTML、图表和校验清单 | 同键相同输入复用，不同输入拒绝；重算新键 |
+| submissions/<submission_id>/ | 请求、成功或拒绝回执、校验清单 | 一次业务交接；重复验证后复用；冲突拒绝 |
+| calls.jsonl | 调用及复用/冲突/读取拒绝日志 | 追加，不当作不可篡改审计链 |
+
+提交请求为 research-submission-v1，包含 submission_id、case_id、run_id。回执成功才包含 input_id、result_id 和 downstream_eligible=true。拒绝回执无 result_id，保留 reason 和 downstream_eligible=false。
+
+case-freeze 复用 artifacts 的规范 JSON/SHA-256 和源码身份；research-submit 调用原 verify，再检查当前案例。research-read 再次检查交接回执、当前 case_id、案例清单、当前代码/依赖和结果文件，拒绝将历史验收当成永久有效状态。调用方应只在命令退出 0 后消费结果，不应直接读缓存回执推进步骤。
+
+主要拒绝码：INPUT_MISMATCH、CURRENT_CASE_MISMATCH、CASE_CODE_STALE、RUN_NOT_SUCCEEDED、SUBMISSION_NOT_SUCCEEDED、SUBMISSION_IDEMPOTENCY_CONFLICT、INTEGRITY_MISMATCH。代码/配置变化不修改旧回执；旧内容仍能单独做历史完整性检查。
+
+故障注入 data 在运行数据取得边界模拟不可用，failed_stage=data_acquisition，明确写 SIMULATED；compute 在计算边界模拟异常。两者都不是真实供应商故障。真实供应商异常另由 test_data 的 mock 验证不泄露错误内容；敏感异常文字不进入回执。失败运行不借用旧 result_id，恢复使用新的 run_id 和 submission_id。
+
+不提供审批、投资判断、工作流调度或交易执行。新 CIO 将来接入时，需把真实当前研究上下文映射到 case_id，并在研究提交和每次后续读取处调用该接口；其自身状态机、冻结上下文和业务幂等必须另行适配并验收。本次没有宣称覆盖不存在的外部系统。
+
+一致性范围：目录独占创建拒绝同时抢占，崩溃或部分写入导致 fail-closed，可用新 ID 重试；不是分布式事务系统。管理员能同时改清单和文件，仍可伪造哈希；需以可信 Git 提交中的原清单作外部锚。原始示例结果均保留。

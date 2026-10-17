@@ -1,0 +1,13 @@
+{
+  "case_id": "baseline",
+  "cio_integrated": false,
+  "created_at": "2026-10-17T05:01:53.092440+00:00",
+  "downstream_eligible": false,
+  "reason": "RUN_NOT_SUCCEEDED: SIMULATED_DATA_ACQUISITION_FAILED",
+  "request_id": "34d555803dcef1f8073c0d1fe554d2279bbf9a54cf0badbe4a1fa9c4bfd66149",
+  "run_id": "failed-data",
+  "schema": "research-submission-v1",
+  "scope": "isolated_research_only",
+  "status": "rejected",
+  "submission_id": "failed-data"
+}

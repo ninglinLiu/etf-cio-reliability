@@ -1,0 +1,11 @@
+{
+  "cio_integration": "outside_user_approved_independent_scope",
+  "created_at": "2026-10-17T05:01:48.984180+00:00",
+  "input_id": "7b231056ec9940d92e591bf3378c05e994d794b5cb4fbbf188d3f4a08597c4a8",
+  "result_id": "28bc0ecb9e5734b5b869f86190f88e59af73b4bb781e25137b513fb7a2213e75",
+  "run_id": "fees",
+  "schema": "etf-result-receipt-v1",
+  "scope": "local_research_only",
+  "simulated": false,
+  "status": "succeeded"
+}

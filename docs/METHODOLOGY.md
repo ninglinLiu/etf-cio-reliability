@@ -1,3 +1,5 @@
+> 2026-10-17：本文件描述主 SPY 样板。另见 `config/paired-replication.json` 的独立机构模型；任务二现采用用户批准的独立研究契约，最新验收以 ACCEPTANCE.md 为准。
+
 # 方法与复核口径
 
 ## 策略与账本

@@ -1,0 +1,14 @@
+{
+  "cio_integration": "outside_user_approved_independent_scope",
+  "created_at": "2026-10-17T05:01:53.033537+00:00",
+  "error_code": "SIMULATED_DATA_ACQUISITION_FAILED",
+  "exception_type": "DataError",
+  "failed_stage": "data_acquisition",
+  "input_id": "a7a27c56373292d8d214b99e865e92ca9c10f09bf9fa8f3d92ba6ae31646cb62",
+  "reason": "SIMULATED: Injected data-source failure before calculation; not a real supplier incident.",
+  "run_id": "failed-data",
+  "schema": "etf-result-receipt-v1",
+  "scope": "local_research_only",
+  "simulated": true,
+  "status": "failed"
+}

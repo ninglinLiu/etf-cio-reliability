@@ -1,0 +1,1193 @@
+{
+  "article": {
+    "author": "Mebane T. Faber / Cambria Investment Management",
+    "page": 67,
+    "table": "Appendix B, 2000s, TIMING column",
+    "title": "A Quantitative Approach to Tactical Asset Allocation",
+    "url": "https://www.cambriainvestments.com/wp-content/uploads/2018/01/A-Quantitative-Approach-to-Tactical-Asset-Allocation.pdf",
+    "version": "February 2013 update"
+  },
+  "comparisons": [
+    {
+      "metric": "annualized_return",
+      "reference": 0.0773,
+      "relative_deviation": 0.01606293347906585,
+      "reproduced_proxy": 0.07854166475793178,
+      "within_ten_percent": true
+    },
+    {
+      "metric": "max_drawdown",
+      "reference": -0.0682,
+      "relative_deviation": 0.05784460545050433,
+      "reproduced_proxy": -0.0642549979082756,
+      "within_ten_percent": true
+    },
+    {
+      "metric": "round_trip_count",
+      "reference": null,
+      "relative_deviation": null,
+      "reproduced_proxy": 4,
+      "within_ten_percent": null
+    }
+  ],
+  "input_hashes": {
+    "french-rf-cambria-proxy.json": "2005dc383ccb8fb9eaf8588e6e23254c753f9e0269a197b8413c6be62db285ab",
+    "spy-cambria-proxy.json": "19c0b87189d0f8598db1693dde8085e8853d2944e2e94d92bddd0bdaf8bbf84d"
+  },
+  "period": "2000-01 through 2009-12",
+  "reasons": [
+    "The article does not disclose an exact trade count for the chosen decade; no numeric deviation can be asserted.",
+    "Original input: GFD S&P 500 total-return index and 90-day T-bill series; available proxy: SPY adjusted close and French one-month RF.",
+    "This is a separately specified article replication attempt, not the SPY20/50 sample.",
+    "Same-close monthly execution is an article assumption, not a claim of implementable fills; current-vintage data do not establish point-in-time availability."
+  ],
+  "reference": {
+    "annualized_return": 0.0773,
+    "max_drawdown": -0.0682,
+    "round_trip_count": null
+  },
+  "reproduction": {
+    "inherited_exposure": 1,
+    "ledger": [
+      {
+        "cash_return": 0.0040999999999999995,
+        "equity": 0.9502126378713974,
+        "held_during_month": 1,
+        "market_return": -0.049787362128602575,
+        "month": "2000-01",
+        "portfolio_return": -0.049787362128602575,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0043,
+        "equity": 0.9357450020917244,
+        "held_during_month": 1,
+        "market_return": -0.01522568233998911,
+        "month": "2000-02",
+        "portfolio_return": -0.01522568233998911,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.004699999999999999,
+        "equity": 1.0264316012769408,
+        "held_during_month": 1,
+        "market_return": 0.0969137948719998,
+        "month": "2000-03",
+        "portfolio_return": 0.0969137948719998,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0046,
+        "equity": 0.9903825553675377,
+        "held_during_month": 1,
+        "market_return": -0.03512074829394962,
+        "month": "2000-04",
+        "portfolio_return": -0.03512074829394962,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.005,
+        "equity": 0.9748119650292268,
+        "held_during_month": 1,
+        "market_return": -0.01572179381989669,
+        "month": "2000-05",
+        "portfolio_return": -0.01572179381989669,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.004,
+        "equity": 0.9939982385303778,
+        "held_during_month": 1,
+        "market_return": 0.019682025036054762,
+        "month": "2000-06",
+        "portfolio_return": 0.019682025036054762,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0048,
+        "equity": 0.9783896697236149,
+        "held_during_month": 1,
+        "market_return": -0.015702813346872957,
+        "month": "2000-07",
+        "portfolio_return": -0.015702813346872957,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.005,
+        "equity": 1.0423185680471938,
+        "held_during_month": 1,
+        "market_return": 0.06534093756492565,
+        "month": "2000-08",
+        "portfolio_return": 0.06534093756492565,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0051,
+        "equity": 0.9851347953076897,
+        "held_during_month": 1,
+        "market_return": -0.05486208774601331,
+        "month": "2000-09",
+        "portfolio_return": -0.05486208774601331,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.005600000000000001,
+        "equity": 0.9906515501614128,
+        "held_during_month": 0,
+        "market_return": -0.004678065495278938,
+        "month": "2000-10",
+        "portfolio_return": 0.005600000000000001,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0051,
+        "equity": 0.9957038730672362,
+        "held_during_month": 0,
+        "market_return": -0.0746528207435262,
+        "month": "2000-11",
+        "portfolio_return": 0.0051,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.005,
+        "equity": 1.0006823924325723,
+        "held_during_month": 0,
+        "market_return": -0.005226511473265694,
+        "month": "2000-12",
+        "portfolio_return": 0.005,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0054,
+        "equity": 1.0060860773517082,
+        "held_during_month": 0,
+        "market_return": 0.044459004282046966,
+        "month": "2001-01",
+        "portfolio_return": 0.0054,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0038,
+        "equity": 1.0099092044456448,
+        "held_during_month": 0,
+        "market_return": -0.0953873188623946,
+        "month": "2001-02",
+        "portfolio_return": 0.0038,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0042,
+        "equity": 1.0141508231043166,
+        "held_during_month": 0,
+        "market_return": -0.056037188238757585,
+        "month": "2001-03",
+        "portfolio_return": 0.0042,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0039000000000000003,
+        "equity": 1.0181060113144234,
+        "held_during_month": 0,
+        "market_return": 0.08544013957281638,
+        "month": "2001-04",
+        "portfolio_return": 0.0039000000000000003,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0032,
+        "equity": 1.0213639505506296,
+        "held_during_month": 0,
+        "market_return": -0.005605681311406041,
+        "month": "2001-05",
+        "portfolio_return": 0.0032,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0028000000000000004,
+        "equity": 1.0242237696121712,
+        "held_during_month": 0,
+        "market_return": -0.023829424680640865,
+        "month": "2001-06",
+        "portfolio_return": 0.0028000000000000004,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.003,
+        "equity": 1.0272964409210077,
+        "held_during_month": 0,
+        "market_return": -0.010195814387012225,
+        "month": "2001-07",
+        "portfolio_return": 0.003,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0031,
+        "equity": 1.0304810598878629,
+        "held_during_month": 0,
+        "market_return": -0.05933230688882585,
+        "month": "2001-08",
+        "portfolio_return": 0.0031,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0028000000000000004,
+        "equity": 1.0333664068555488,
+        "held_during_month": 0,
+        "market_return": -0.08163067727406659,
+        "month": "2001-09",
+        "portfolio_return": 0.0028000000000000004,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0022,
+        "equity": 1.035639812950631,
+        "held_during_month": 0,
+        "market_return": 0.013021652144818097,
+        "month": "2001-10",
+        "portfolio_return": 0.0022,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0017000000000000001,
+        "equity": 1.0374004006326472,
+        "held_during_month": 0,
+        "market_return": 0.07797780294163781,
+        "month": "2001-11",
+        "portfolio_return": 0.0017000000000000001,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0015,
+        "equity": 1.0389565012335962,
+        "held_during_month": 0,
+        "market_return": 0.005638765003644686,
+        "month": "2001-12",
+        "portfolio_return": 0.0015,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0014000000000000002,
+        "equity": 1.0404110403353233,
+        "held_during_month": 0,
+        "market_return": -0.009798787312683355,
+        "month": "2002-01",
+        "portfolio_return": 0.0014000000000000002,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0013,
+        "equity": 1.0417635746877594,
+        "held_during_month": 0,
+        "market_return": -0.017936066750341317,
+        "month": "2002-02",
+        "portfolio_return": 0.0013,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0013,
+        "equity": 1.0431178673348536,
+        "held_during_month": 0,
+        "market_return": 0.03327053815046099,
+        "month": "2002-03",
+        "portfolio_return": 0.0013,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0015,
+        "equity": 0.9824551722020112,
+        "held_during_month": 1,
+        "market_return": -0.05815516830119538,
+        "month": "2002-04",
+        "portfolio_return": -0.05815516830119538,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0014000000000000002,
+        "equity": 0.9838306094430941,
+        "held_during_month": 0,
+        "market_return": -0.005933669519845419,
+        "month": "2002-05",
+        "portfolio_return": 0.0014000000000000002,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0013,
+        "equity": 0.9851095892353702,
+        "held_during_month": 0,
+        "market_return": -0.07380703087306384,
+        "month": "2002-06",
+        "portfolio_return": 0.0013,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0015,
+        "equity": 0.9865872536192233,
+        "held_during_month": 0,
+        "market_return": -0.07882040012049563,
+        "month": "2002-07",
+        "portfolio_return": 0.0015,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0014000000000000002,
+        "equity": 0.9879684757742903,
+        "held_during_month": 0,
+        "market_return": 0.0068013950019494285,
+        "month": "2002-08",
+        "portfolio_return": 0.0014000000000000002,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0014000000000000002,
+        "equity": 0.9893516316403743,
+        "held_during_month": 0,
+        "market_return": -0.10485255120075021,
+        "month": "2002-09",
+        "portfolio_return": 0.0014000000000000002,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0014000000000000002,
+        "equity": 0.9907367239246709,
+        "held_during_month": 0,
+        "market_return": 0.08228400847157835,
+        "month": "2002-10",
+        "portfolio_return": 0.0014000000000000002,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0012,
+        "equity": 0.9919256079933806,
+        "held_during_month": 0,
+        "market_return": 0.06168111459977399,
+        "month": "2002-11",
+        "portfolio_return": 0.0012,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0011,
+        "equity": 0.9930167261621734,
+        "held_during_month": 0,
+        "market_return": -0.05656994039352714,
+        "month": "2002-12",
+        "portfolio_return": 0.0011,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.001,
+        "equity": 0.9940097428883354,
+        "held_during_month": 0,
+        "market_return": -0.024594944408022013,
+        "month": "2003-01",
+        "portfolio_return": 0.001,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0009,
+        "equity": 0.9949043516569348,
+        "held_during_month": 0,
+        "market_return": -0.013479202337345453,
+        "month": "2003-02",
+        "portfolio_return": 0.0009,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.001,
+        "equity": 0.9958992560085916,
+        "held_during_month": 0,
+        "market_return": 0.0021406171103204308,
+        "month": "2003-03",
+        "portfolio_return": 0.001,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.001,
+        "equity": 0.9968951552646002,
+        "held_during_month": 0,
+        "market_return": 0.0846112402174708,
+        "month": "2003-04",
+        "portfolio_return": 0.001,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0009,
+        "equity": 1.0515615890409766,
+        "held_during_month": 1,
+        "market_return": 0.054836693194548314,
+        "month": "2003-05",
+        "portfolio_return": 0.054836693194548314,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.001,
+        "equity": 1.062762330443793,
+        "held_during_month": 1,
+        "market_return": 0.01065153151232101,
+        "month": "2003-06",
+        "portfolio_return": 0.01065153151232101,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0007000000000000001,
+        "equity": 1.0819207607717383,
+        "held_during_month": 1,
+        "market_return": 0.01802701298223952,
+        "month": "2003-07",
+        "portfolio_return": 0.01802701298223952,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0007000000000000001,
+        "equity": 1.1042362542701665,
+        "held_during_month": 1,
+        "market_return": 0.020625811341775657,
+        "month": "2003-08",
+        "portfolio_return": 0.020625811341775657,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0008,
+        "equity": 1.0921934391133912,
+        "held_during_month": 1,
+        "market_return": -0.01090601319256157,
+        "month": "2003-09",
+        "portfolio_return": -0.01090601319256157,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0007000000000000001,
+        "equity": 1.1506555144699473,
+        "held_during_month": 1,
+        "market_return": 0.05352721712374864,
+        "month": "2003-10",
+        "portfolio_return": 0.05352721712374864,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0007000000000000001,
+        "equity": 1.1632213678316061,
+        "held_during_month": 1,
+        "market_return": 0.01092060412837581,
+        "month": "2003-11",
+        "portfolio_return": 0.01092060412837581,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0008,
+        "equity": 1.2217459693363215,
+        "held_during_month": 1,
+        "market_return": 0.05031252272627418,
+        "month": "2003-12",
+        "portfolio_return": 0.05031252272627418,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0007000000000000001,
+        "equity": 1.2459004671923675,
+        "held_during_month": 1,
+        "market_return": 0.01977047476503424,
+        "month": "2004-01",
+        "portfolio_return": 0.01977047476503424,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0006,
+        "equity": 1.2628076391168719,
+        "held_during_month": 1,
+        "market_return": 0.013570242864267223,
+        "month": "2004-02",
+        "portfolio_return": 0.013570242864267223,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0009,
+        "equity": 1.2460815774146212,
+        "held_during_month": 1,
+        "market_return": -0.013245138201688267,
+        "month": "2004-03",
+        "portfolio_return": -0.013245138201688267,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0008,
+        "equity": 1.2225036391316602,
+        "held_during_month": 1,
+        "market_return": -0.018921665090242956,
+        "month": "2004-04",
+        "portfolio_return": -0.018921665090242956,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0006,
+        "equity": 1.243437469632027,
+        "held_during_month": 1,
+        "market_return": 0.017123736756510688,
+        "month": "2004-05",
+        "portfolio_return": 0.017123736756510688,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0008,
+        "equity": 1.2664425263506185,
+        "held_during_month": 1,
+        "market_return": 0.018501177003616753,
+        "month": "2004-06",
+        "portfolio_return": 0.018501177003616753,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.001,
+        "equity": 1.2256388244916816,
+        "held_during_month": 1,
+        "market_return": -0.032219150107440586,
+        "month": "2004-07",
+        "portfolio_return": -0.032219150107440586,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0011,
+        "equity": 1.2286244797732457,
+        "held_during_month": 1,
+        "market_return": 0.0024359992698521626,
+        "month": "2004-08",
+        "portfolio_return": 0.0024359992698521626,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0011,
+        "equity": 1.2299759667009964,
+        "held_during_month": 0,
+        "market_return": 0.010037536631584132,
+        "month": "2004-09",
+        "portfolio_return": 0.0011,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0011,
+        "equity": 1.2458239259554236,
+        "held_during_month": 1,
+        "market_return": 0.0128847714780429,
+        "month": "2004-10",
+        "portfolio_return": 0.0128847714780429,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0015,
+        "equity": 1.3012851209479204,
+        "held_during_month": 1,
+        "market_return": 0.044517683307425227,
+        "month": "2004-11",
+        "portfolio_return": 0.044517683307425227,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0016,
+        "equity": 1.3404807626076598,
+        "held_during_month": 1,
+        "market_return": 0.03012071761120838,
+        "month": "2004-12",
+        "portfolio_return": 0.03012071761120838,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0016,
+        "equity": 1.310426685235791,
+        "held_during_month": 1,
+        "market_return": -0.022420372011459522,
+        "month": "2005-01",
+        "portfolio_return": -0.022420372011459522,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0016,
+        "equity": 1.337819197460014,
+        "held_during_month": 1,
+        "market_return": 0.020903506112052384,
+        "month": "2005-02",
+        "portfolio_return": 0.020903506112052384,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0021,
+        "equity": 1.313346701143535,
+        "held_during_month": 1,
+        "market_return": -0.01829282788208042,
+        "month": "2005-03",
+        "portfolio_return": -0.01829282788208042,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0021,
+        "equity": 1.2887408311614605,
+        "held_during_month": 1,
+        "market_return": -0.018735243299160875,
+        "month": "2005-04",
+        "portfolio_return": -0.018735243299160875,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0024,
+        "equity": 1.3302698205881958,
+        "held_during_month": 1,
+        "market_return": 0.03222446935999357,
+        "month": "2005-05",
+        "portfolio_return": 0.03222446935999357,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0023,
+        "equity": 1.332285258835596,
+        "held_during_month": 1,
+        "market_return": 0.0015150597391655474,
+        "month": "2005-06",
+        "portfolio_return": 0.0015150597391655474,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0024,
+        "equity": 1.3832603972738005,
+        "held_during_month": 1,
+        "market_return": 0.038261429449993445,
+        "month": "2005-07",
+        "portfolio_return": 0.038261429449993445,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.003,
+        "equity": 1.3702931080672385,
+        "held_during_month": 1,
+        "market_return": -0.009374438270710717,
+        "month": "2005-08",
+        "portfolio_return": -0.009374438270710717,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0029,
+        "equity": 1.3812907158730325,
+        "held_during_month": 1,
+        "market_return": 0.008025733867483176,
+        "month": "2005-09",
+        "portfolio_return": 0.008025733867483176,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0027,
+        "equity": 1.3486214587282634,
+        "held_during_month": 1,
+        "market_return": -0.023651253692906216,
+        "month": "2005-10",
+        "portfolio_return": -0.023651253692906216,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0031,
+        "equity": 1.4078966880165482,
+        "held_during_month": 1,
+        "market_return": 0.043952458938463446,
+        "month": "2005-11",
+        "portfolio_return": 0.043952458938463446,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0032,
+        "equity": 1.4052028165238903,
+        "held_during_month": 1,
+        "market_return": -0.0019134013991133347,
+        "month": "2005-12",
+        "portfolio_return": -0.0019134013991133347,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0034999999999999996,
+        "equity": 1.4389473595645155,
+        "held_during_month": 1,
+        "market_return": 0.024014001853554845,
+        "month": "2006-01",
+        "portfolio_return": 0.024014001853554845,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0034000000000000002,
+        "equity": 1.44718660889325,
+        "held_during_month": 1,
+        "market_return": 0.005725886547530035,
+        "month": "2006-02",
+        "portfolio_return": 0.005725886547530035,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0037,
+        "equity": 1.4710703000733965,
+        "held_during_month": 1,
+        "market_return": 0.01650353246317815,
+        "month": "2006-03",
+        "portfolio_return": 0.01650353246317815,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0036,
+        "equity": 1.4896527337365866,
+        "held_during_month": 1,
+        "market_return": 0.012631914098369723,
+        "month": "2006-04",
+        "portfolio_return": 0.012631914098369723,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0043,
+        "equity": 1.4447828659775894,
+        "held_during_month": 1,
+        "market_return": -0.030121025352296216,
+        "month": "2006-05",
+        "portfolio_return": -0.030121025352296216,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.004,
+        "equity": 1.448551520543613,
+        "held_during_month": 1,
+        "market_return": 0.002608457405447906,
+        "month": "2006-06",
+        "portfolio_return": 0.002608457405447906,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.004,
+        "equity": 1.4550379306705918,
+        "held_during_month": 1,
+        "market_return": 0.0044778594582155495,
+        "month": "2006-07",
+        "portfolio_return": 0.0044778594582155495,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0042,
+        "equity": 1.4867912966489818,
+        "held_during_month": 1,
+        "market_return": 0.021823050319901727,
+        "month": "2006-08",
+        "portfolio_return": 0.021823050319901727,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0040999999999999995,
+        "equity": 1.5269368956988294,
+        "held_during_month": 1,
+        "market_return": 0.0270015025917425,
+        "month": "2006-09",
+        "portfolio_return": 0.0270015025917425,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0040999999999999995,
+        "equity": 1.5750607792048608,
+        "held_during_month": 1,
+        "market_return": 0.03151661580880627,
+        "month": "2006-10",
+        "portfolio_return": 0.03151661580880627,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0042,
+        "equity": 1.606380460785226,
+        "held_during_month": 1,
+        "market_return": 0.01988474476278701,
+        "month": "2006-11",
+        "portfolio_return": 0.01988474476278701,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.004,
+        "equity": 1.6278607861665795,
+        "held_during_month": 1,
+        "market_return": 0.013371879144280507,
+        "month": "2006-12",
+        "portfolio_return": 0.013371879144280507,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0044,
+        "equity": 1.6523439674609808,
+        "held_during_month": 1,
+        "market_return": 0.015040095260268727,
+        "month": "2007-01",
+        "portfolio_return": 0.015040095260268727,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0038,
+        "equity": 1.619928887085141,
+        "held_during_month": 1,
+        "market_return": -0.01961763471418687,
+        "month": "2007-02",
+        "portfolio_return": -0.01961763471418687,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0043,
+        "equity": 1.6387028961171977,
+        "held_during_month": 1,
+        "market_return": 0.011589403202654225,
+        "month": "2007-03",
+        "portfolio_return": 0.011589403202654225,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0044,
+        "equity": 1.7112893451955213,
+        "held_during_month": 1,
+        "market_return": 0.044295063644735455,
+        "month": "2007-04",
+        "portfolio_return": 0.044295063644735455,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0040999999999999995,
+        "equity": 1.7693370590789619,
+        "held_during_month": 1,
+        "market_return": 0.03392045538436306,
+        "month": "2007-05",
+        "portfolio_return": 0.03392045538436306,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.004,
+        "equity": 1.7434677218839754,
+        "held_during_month": 1,
+        "market_return": -0.01462092090494782,
+        "month": "2007-06",
+        "portfolio_return": -0.01462092090494782,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.004,
+        "equity": 1.688879175323678,
+        "held_during_month": 1,
+        "market_return": -0.03131032818967794,
+        "month": "2007-07",
+        "portfolio_return": -0.03131032818967794,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0042,
+        "equity": 1.7105525845413698,
+        "held_during_month": 1,
+        "market_return": 0.012833013476845068,
+        "month": "2007-08",
+        "portfolio_return": 0.012833013476845068,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0032,
+        "equity": 1.7767754378860108,
+        "held_during_month": 1,
+        "market_return": 0.03871430433832379,
+        "month": "2007-09",
+        "portfolio_return": 0.03871430433832379,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0032,
+        "equity": 1.8008808737844515,
+        "held_during_month": 1,
+        "market_return": 0.0135669569628456,
+        "month": "2007-10",
+        "portfolio_return": 0.0135669569628456,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0034000000000000002,
+        "equity": 1.7311273266173988,
+        "held_during_month": 1,
+        "market_return": -0.03873301570495857,
+        "month": "2007-11",
+        "portfolio_return": -0.03873301570495857,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0027,
+        "equity": 1.7116332757789985,
+        "held_during_month": 1,
+        "market_return": -0.011260899495181276,
+        "month": "2007-12",
+        "portfolio_return": -0.011260899495181276,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0021,
+        "equity": 1.7152277056581344,
+        "held_during_month": 0,
+        "market_return": -0.06046090822823369,
+        "month": "2008-01",
+        "portfolio_return": 0.0021,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0013,
+        "equity": 1.71745750167549,
+        "held_during_month": 0,
+        "market_return": -0.025842348386279745,
+        "month": "2008-02",
+        "portfolio_return": 0.0013,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0017000000000000001,
+        "equity": 1.7203771794283385,
+        "held_during_month": 0,
+        "market_return": -0.008942451085689695,
+        "month": "2008-03",
+        "portfolio_return": 0.0017000000000000001,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0018,
+        "equity": 1.7234738583513094,
+        "held_during_month": 0,
+        "market_return": 0.04766247607160312,
+        "month": "2008-04",
+        "portfolio_return": 0.0018,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0018,
+        "equity": 1.7265761112963418,
+        "held_during_month": 0,
+        "market_return": 0.01511671238940715,
+        "month": "2008-05",
+        "portfolio_return": 0.0018,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0017000000000000001,
+        "equity": 1.7295112906855457,
+        "held_during_month": 0,
+        "market_return": -0.08357572292444948,
+        "month": "2008-06",
+        "portfolio_return": 0.0017000000000000001,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0015,
+        "equity": 1.732105557621574,
+        "held_during_month": 0,
+        "market_return": -0.008985988427574143,
+        "month": "2008-07",
+        "portfolio_return": 0.0015,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0013,
+        "equity": 1.7343572948464823,
+        "held_during_month": 0,
+        "market_return": 0.015453961480694556,
+        "month": "2008-08",
+        "portfolio_return": 0.0013,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0015,
+        "equity": 1.736958830788752,
+        "held_during_month": 0,
+        "market_return": -0.09417379302738671,
+        "month": "2008-09",
+        "portfolio_return": 0.0015,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0008,
+        "equity": 1.738348397853383,
+        "held_during_month": 0,
+        "market_return": -0.16518676619753736,
+        "month": "2008-10",
+        "portfolio_return": 0.0008,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0003,
+        "equity": 1.738869902372739,
+        "held_during_month": 0,
+        "market_return": -0.0696067475036426,
+        "month": "2008-11",
+        "portfolio_return": 0.0003,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0,
+        "equity": 1.738869902372739,
+        "held_during_month": 0,
+        "market_return": 0.009796738847811293,
+        "month": "2008-12",
+        "portfolio_return": 0.0,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0,
+        "equity": 1.738869902372739,
+        "held_during_month": 0,
+        "market_return": -0.0821144728766462,
+        "month": "2009-01",
+        "portfolio_return": 0.0,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0001,
+        "equity": 1.7390437893629762,
+        "held_during_month": 0,
+        "market_return": -0.10744871296864966,
+        "month": "2009-02",
+        "portfolio_return": 0.0001,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0002,
+        "equity": 1.7393915981208488,
+        "held_during_month": 0,
+        "market_return": 0.08331056948759641,
+        "month": "2009-03",
+        "portfolio_return": 0.0002,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0001,
+        "equity": 1.7395655372806609,
+        "held_during_month": 0,
+        "market_return": 0.09934580144036809,
+        "month": "2009-04",
+        "portfolio_return": 0.0001,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0,
+        "equity": 1.7395655372806609,
+        "held_during_month": 0,
+        "market_return": 0.058453187716926536,
+        "month": "2009-05",
+        "portfolio_return": 0.0,
+        "signal_after_month_end": 0
+      },
+      {
+        "cash_return": 0.0001,
+        "equity": 1.7397394938343889,
+        "held_during_month": 0,
+        "market_return": -0.0006547266164765864,
+        "month": "2009-06",
+        "portfolio_return": 0.0001,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0001,
+        "equity": 1.86953390164716,
+        "held_during_month": 1,
+        "market_return": 0.07460565692321208,
+        "month": "2009-07",
+        "portfolio_return": 0.07460565692321208,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0001,
+        "equity": 1.9385937554774604,
+        "held_during_month": 1,
+        "market_return": 0.036939610332529904,
+        "month": "2009-08",
+        "portfolio_return": 0.036939610332529904,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0001,
+        "equity": 2.007331393975909,
+        "held_during_month": 1,
+        "market_return": 0.03545747442146241,
+        "month": "2009-09",
+        "portfolio_return": 0.03545747442146241,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0,
+        "equity": 1.9687397909991964,
+        "held_during_month": 1,
+        "market_return": -0.019225327264111858,
+        "month": "2009-10",
+        "portfolio_return": -0.019225327264111858,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0,
+        "equity": 2.0900265387976007,
+        "held_during_month": 1,
+        "market_return": 0.06160628659658851,
+        "month": "2009-11",
+        "portfolio_return": 0.06160628659658851,
+        "signal_after_month_end": 1
+      },
+      {
+        "cash_return": 0.0001,
+        "equity": 2.1299493122273603,
+        "held_during_month": 1,
+        "market_return": 0.019101562917343218,
+        "month": "2009-12",
+        "portfolio_return": 0.019101562917343218,
+        "signal_after_month_end": 1
+      }
+    ],
+    "metrics": {
+      "annualized_return": 0.07854166475793178,
+      "max_drawdown": -0.0642549979082756,
+      "round_trip_count": 4,
+      "total_return": 1.1299493122273603
+    },
+    "orders": [
+      {
+        "date": "2000-09-29",
+        "exposure_next_month": 0,
+        "side": "SELL",
+        "signal_total_return_level": 90.4408187866211
+      },
+      {
+        "date": "2002-03-28",
+        "exposure_next_month": 1,
+        "side": "BUY",
+        "signal_total_return_level": 73.4694595336914
+      },
+      {
+        "date": "2002-04-30",
+        "exposure_next_month": 0,
+        "side": "SELL",
+        "signal_total_return_level": 69.19683074951172
+      },
+      {
+        "date": "2003-04-30",
+        "exposure_next_month": 1,
+        "side": "BUY",
+        "signal_total_return_level": 59.96872329711914
+      },
+      {
+        "date": "2004-08-31",
+        "exposure_next_month": 0,
+        "side": "SELL",
+        "signal_total_return_level": 73.90851593017578
+      },
+      {
+        "date": "2004-09-30",
+        "exposure_next_month": 1,
+        "side": "BUY",
+        "signal_total_return_level": 74.65037536621094
+      },
+      {
+        "date": "2007-12-31",
+        "exposure_next_month": 0,
+        "side": "SELL",
+        "signal_total_return_level": 103.88338470458984
+      },
+      {
+        "date": "2009-06-30",
+        "exposure_next_month": 1,
+        "side": "BUY",
+        "signal_total_return_level": 67.76321411132812
+      }
+    ],
+    "trade_count_convention": "Sell exits in interval, including closure of an inherited pre-2000 position; no terminal forced sale"
+  },
+  "rule": "Month-end total-return price > 10-month SMA; otherwise Treasury bills; no fees/taxes/slippage",
+  "status": "NOT_ACCEPTED"
+}

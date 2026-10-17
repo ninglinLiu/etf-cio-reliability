@@ -1,0 +1,143 @@
+{
+  "scope": "User-approved independent research reliability acceptance; no existing CIO integrated",
+  "status": "passed",
+  "synthetic_data": true,
+  "scenario_count": 3,
+  "assertion_records": 17,
+  "records": [
+    {
+      "scenario": "1/read/parameters",
+      "status": "PASS",
+      "rejection": "CURRENT_CASE_MISMATCH: historical acceptance is not current"
+    },
+    {
+      "scenario": "1/submit-and-recover/parameters",
+      "status": "PASS",
+      "old_input_id": "10fa9a5cde5cbebb46dee1c7b49c31c1e28f485e6f083a137c41f3238eb5fa66",
+      "new_input_id": "0aeef2c51924ad3b54d0a87cdc424e4131389e71db76b27675b175fd79417a89",
+      "new_result_id": "15336f051bb91abb06770cf9e7e6df17a8f4bb7d231e6462cec12ba86713198e",
+      "rejection": "INPUT_MISMATCH: result remains historical evidence only"
+    },
+    {
+      "scenario": "1/read/fees",
+      "status": "PASS",
+      "rejection": "CURRENT_CASE_MISMATCH: historical acceptance is not current"
+    },
+    {
+      "scenario": "1/submit-and-recover/fees",
+      "status": "PASS",
+      "old_input_id": "10fa9a5cde5cbebb46dee1c7b49c31c1e28f485e6f083a137c41f3238eb5fa66",
+      "new_input_id": "7b231056ec9940d92e591bf3378c05e994d794b5cb4fbbf188d3f4a08597c4a8",
+      "new_result_id": "28bc0ecb9e5734b5b869f86190f88e59af73b4bb781e25137b513fb7a2213e75",
+      "rejection": "INPUT_MISMATCH: result remains historical evidence only"
+    },
+    {
+      "scenario": "1/read/data",
+      "status": "PASS",
+      "rejection": "CURRENT_CASE_MISMATCH: historical acceptance is not current"
+    },
+    {
+      "scenario": "1/submit-and-recover/data",
+      "status": "PASS",
+      "old_input_id": "10fa9a5cde5cbebb46dee1c7b49c31c1e28f485e6f083a137c41f3238eb5fa66",
+      "new_input_id": "720661a709995a7d139ffe5b9664f0bd0f051a1474f79cbb29a7e6a1be1c772d",
+      "new_result_id": "4107bc450afa90212469dbc15616980fc9413144027cf9988fe15f2922210f80",
+      "rejection": "INPUT_MISMATCH: result remains historical evidence only"
+    },
+    {
+      "scenario": "1/read/source",
+      "status": "PASS",
+      "rejection": "CURRENT_CASE_MISMATCH: historical acceptance is not current"
+    },
+    {
+      "scenario": "1/submit-and-recover/source",
+      "status": "PASS",
+      "old_input_id": "10fa9a5cde5cbebb46dee1c7b49c31c1e28f485e6f083a137c41f3238eb5fa66",
+      "new_input_id": "a04a6d17fa3dd29a69108c14563222c2c29da86ce6e9def859db92731d6e9f48",
+      "new_result_id": "4107bc450afa90212469dbc15616980fc9413144027cf9988fe15f2922210f80",
+      "rejection": "INPUT_MISMATCH: result remains historical evidence only"
+    },
+    {
+      "scenario": "2/read/data",
+      "status": "PASS",
+      "rejection": "SUBMISSION_NOT_SUCCEEDED"
+    },
+    {
+      "scenario": "2/failure-and-recovery/data",
+      "status": "PASS",
+      "failure": {
+        "schema": "etf-result-receipt-v1",
+        "run_id": "failed-data",
+        "input_id": "a7a27c56373292d8d214b99e865e92ca9c10f09bf9fa8f3d92ba6ae31646cb62",
+        "created_at": "2026-10-17T05:01:53.033537+00:00",
+        "simulated": true,
+        "scope": "local_research_only",
+        "cio_integration": "outside_user_approved_independent_scope",
+        "status": "failed",
+        "failed_stage": "data_acquisition",
+        "error_code": "SIMULATED_DATA_ACQUISITION_FAILED",
+        "reason": "SIMULATED: Injected data-source failure before calculation; not a real supplier incident.",
+        "exception_type": "DataError"
+      },
+      "refusal": "RUN_NOT_SUCCEEDED: SIMULATED_DATA_ACQUISITION_FAILED",
+      "recovery_run_id": "recovered-data"
+    },
+    {
+      "scenario": "2/read/compute",
+      "status": "PASS",
+      "rejection": "SUBMISSION_NOT_SUCCEEDED"
+    },
+    {
+      "scenario": "2/failure-and-recovery/compute",
+      "status": "PASS",
+      "failure": {
+        "schema": "etf-result-receipt-v1",
+        "run_id": "failed-compute",
+        "input_id": "facbb4bd7fe4ae1451337b64f70cd66316f2248e471cc45f2b6f1730fa65df61",
+        "created_at": "2026-10-17T05:01:54.426735+00:00",
+        "simulated": true,
+        "scope": "local_research_only",
+        "cio_integration": "outside_user_approved_independent_scope",
+        "status": "failed",
+        "failed_stage": "calculation",
+        "error_code": "CALCULATION_FAILED",
+        "reason": "SIMULATED: Calculation did not complete; no successful result is available.",
+        "exception_type": "ArithmeticError"
+      },
+      "refusal": "RUN_NOT_SUCCEEDED: CALCULATION_FAILED",
+      "recovery_run_id": "recovered-compute"
+    },
+    {
+      "scenario": "3/submission-conflict",
+      "status": "PASS",
+      "rejection": "SUBMISSION_IDEMPOTENCY_CONFLICT"
+    },
+    {
+      "scenario": "3/run-conflict",
+      "status": "PASS",
+      "rejection": "INPUT_MISMATCH: result remains historical evidence only"
+    },
+    {
+      "scenario": "3/idempotency",
+      "status": "PASS",
+      "valid_results_for_original_key": 1,
+      "valid_handoffs_for_original_key": 1,
+      "second_action": "reused_succeeded",
+      "recompute_run_id": "explicit-recompute"
+    },
+    {
+      "scenario": "3/consume-tampered",
+      "status": "PASS",
+      "rejection": "INTEGRITY_MISMATCH: result.json"
+    },
+    {
+      "scenario": "3/reuse-tampered",
+      "status": "PASS",
+      "rejection": "INTEGRITY_MISMATCH: result.json"
+    }
+  ],
+  "accepted_handoffs": 8,
+  "rejected_handoffs": 6,
+  "failed_runs": 2,
+  "original_history_preserved": true
+}

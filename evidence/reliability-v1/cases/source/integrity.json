@@ -1,0 +1,7 @@
+{
+  "algorithm": "sha256",
+  "files": {
+    "case.json": "f695261c7ecc17196ff6db7200483fc20aeac9ddae6cc7a8264366e8e9a19933",
+    "snapshot.json": "a2e7f61d7ffd7ce249b754b5629ceb0456f32efe4cf14e8fbd6d389bb2b37f2c"
+  }
+}

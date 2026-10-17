@@ -1,0 +1,9 @@
+{
+  "algorithm": "sha256",
+  "files": {
+    "input.json": "facbb4bd7fe4ae1451337b64f70cd66316f2248e471cc45f2b6f1730fa65df61",
+    "receipt.json": "4384074e09fd7c368c7e566e3f5e641b1f343662972ce2ff2c13871cf9469d01",
+    "snapshot.json": "90569c45a24dc1460d55ad0593414871ceaa26090652a522bbfedbe874822554"
+  },
+  "limitation": "Integrity check, not administrator-proof signing"
+}

@@ -1,3 +1,38 @@
+# 最终交付记录 · 2026-10-17
+
+计算源码版本：`244fe1fa3f05b23c373230456510137f0dd40ffd`。实验分支 `experiment/spy-backtest-reliability`；GitHub 私有仓库 [ninglinLiu/etf-cio-reliability](https://github.com/ninglinLiu/etf-cio-reliability)。交付文件所属提交可由 `git rev-parse HEAD` 查看；未合并主分支。
+
+任务二按用户明确确认改为独立研究结果可靠性验收。机构验收仍保留原文三项精确基准，未放宽。
+
+| 交付 | 证据 |
+|---|---|
+| 42 项自动测试 | `evidence/tests-v2.txt` |
+| 主回测、逐笔账本和图表 | `output/runs/spy-v2/` |
+| 独立审计最大差额 0 | `evidence/audit-v2.txt` |
+| 当前输入/历史完整性校验 | `evidence/verify-v2.txt`、`history-verify-v1.txt` |
+| 真实旧算法比较 | `evidence/existing-comparison-v2/`；原源码和提交在 `vendor/finresearch-lab/` |
+| 机构三项完整对标 | `evidence/paired-replication-v1/`；精确原文值、45 笔买卖、2,517 日账本 |
+| 独立可靠性三场景 | `evidence/reliability-v1/`；8 成功交接、6 拒绝、2 次模拟失败，17 条断言记录 |
+| 实际演示截图 | `evidence/screenshots/` 中三个场景、主报告和机构报告 |
+| 实施 diff | `evidence/implementation-v2.patch`；完整版本可 `git diff 1fa8af9 244fe1f` |
+| 第三方复现入口 | `scripts/reproduce.py`；干净副本输出位于 `evidence/clean-reproduction-v2/` |
+
+最新主运行 input_id：`2ae4005170c9b048069902655f50f1cfeb9c48bcd0449040c42dc13fd024a703`；result_id：`bc29247fb6a85db7430dfea5e7645b96d1cdabe8a32844a550468c52375f23ba`。财务指标与首版相同；新输入身份反映新增接口/报告源码版本，旧运行完整保留。
+
+机构报告以 Alpha Architect 的研究报道为入口，数字取自其讨论的 Glenn 原文在 IFTA 2021 第 95 页表 1 第一行。累计收益/年化/回撤/订单数相对偏差分别 0.428112%、0.201261%、0.187517%、0%。首次按原固定参数执行即通过，没有参数搜索。未采用 Cambria 候选作为通过证据；其缺交易次数的 NOT_ACCEPTED 文件保留。
+
+## 复现与回退
+
+按 README 安装锁定依赖，运行 `python scripts/reproduce.py --output scratch/reproduce-001`。该命令不联网获取数据，逐步保存实际命令、退出码和输出。成功读取必须退出 0；变更当前案例、消费失败回执和消费篡改副本必须退出 2。
+
+回退：停止使用独立研究交接命令即可，无真实系统迁移需要撤销。如需恢复代码，在新的实验提交中 `git revert 244fe1f`（可能需按后续依赖处理冲突），保留所有已存在运行/失败/案例/提交证据；或从历史提交建立另一个隔离 checkout 做历史复核。不要重写原分支历史或删除失败以伪造通过。代码变更后重新冻结案例并新建运行，不能继续使用旧的“当前有效”判断。
+
+限制：不是原 CIO 集成；调用方绕过接口直读文件不受保护；未实现分布式事务或管理员绝对防篡改；SPY 分红按除息日到账为近似；ETF 样板不外推选股。论文模型的同收盘成交、当前复权数据及未量化原费用的 $1 近似单独披露。
+
+---
+
+## 首版归档（以下为 2026-10-16 当时状态，已被上面的新版交付取代）
+
 # 本地首版交付记录
 
 2026-10-16；计算源码提交 `11321ef`；实验分支 `experiment/spy-backtest-reliability`，没有主分支合并或远端推送。
