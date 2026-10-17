@@ -7,6 +7,7 @@
 | 交付 | 证据 |
 |---|---|
 | 42 项自动测试 | `evidence/tests-v2.txt` |
+| 21 项相邻项目既有回归 | `evidence/adjacent-finresearch-tests-v2.txt`；原项目没有改动 |
 | 主回测、逐笔账本和图表 | `output/runs/spy-v2/` |
 | 独立审计最大差额 0 | `evidence/audit-v2.txt` |
 | 当前输入/历史完整性校验 | `evidence/verify-v2.txt`、`history-verify-v1.txt` |
@@ -14,8 +15,8 @@
 | 机构三项完整对标 | `evidence/paired-replication-v1/`；精确原文值、45 笔买卖、2,517 日账本 |
 | 独立可靠性三场景 | `evidence/reliability-v1/`；8 成功交接、6 拒绝、2 次模拟失败，17 条断言记录 |
 | 实际演示截图 | `evidence/screenshots/` 中三个场景、主报告和机构报告 |
-| 实施 diff | `evidence/implementation-v2.patch`；完整版本可 `git diff 1fa8af9 244fe1f` |
-| 第三方复现入口 | `scripts/reproduce.py`；干净副本输出位于 `evidence/clean-reproduction-v2/` |
+| 实施 diff | `evidence/implementation-v2.patch` 固定计算版本；`evidence/final-code.patch` 含最终代码、脚本、测试、配置和说明，不重复展开大型数据/报告 |
+| 第三方复现入口 | `scripts/reproduce.py`；干净副本 11 / 11 步骤通过，实际输出位于 `evidence/clean-reproduction-v2/` |
 
 最新主运行 input_id：`2ae4005170c9b048069902655f50f1cfeb9c48bcd0449040c42dc13fd024a703`；result_id：`bc29247fb6a85db7430dfea5e7645b96d1cdabe8a32844a550468c52375f23ba`。财务指标与首版相同；新输入身份反映新增接口/报告源码版本，旧运行完整保留。
 
@@ -24,6 +25,8 @@
 ## 复现与回退
 
 按 README 安装锁定依赖，运行 `python scripts/reproduce.py --output scratch/reproduce-001`。该命令不联网获取数据，逐步保存实际命令、退出码和输出。成功读取必须退出 0；变更当前案例、消费失败回执和消费篡改副本必须退出 2。
+
+2026-10-17 从提交 `ecebd2b1ebaec65466799248361265317520bd9f` 建立干净 Git 副本，复用已安装锁定依赖的 Python 3.11 环境执行完整命令。11 个步骤全部通过，包含再次运行的 42 项测试；副本执行前后 Git 工作区均干净。重算输入与结果标识和 `spy-v2` 完全一致。`evidence/clean-reproduction-v2/provenance.json` 保存版本、环境、文件哈希和标识，stdout/stderr 与实际退出码同时保留。后续交付提交仅添加这些证据、文档、截图与补丁文件的换行检查属性，未改变计算代码。
 
 回退：停止使用独立研究交接命令即可，无真实系统迁移需要撤销。如需恢复代码，在新的实验提交中 `git revert 244fe1f`（可能需按后续依赖处理冲突），保留所有已存在运行/失败/案例/提交证据；或从历史提交建立另一个隔离 checkout 做历史复核。不要重写原分支历史或删除失败以伪造通过。代码变更后重新冻结案例并新建运行，不能继续使用旧的“当前有效”判断。
 

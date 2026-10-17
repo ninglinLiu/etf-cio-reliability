@@ -1,0 +1,16 @@
+{
+  "case_id": "baseline",
+  "cio_integrated": false,
+  "created_at": "2026-10-17T05:08:33.016337+00:00",
+  "downstream_eligible": true,
+  "input_id": "10fa9a5cde5cbebb46dee1c7b49c31c1e28f485e6f083a137c41f3238eb5fa66",
+  "request_id": "de1e30dd4d4667f9a13ea44bd629b84ec146b37bcc067a235d1bb445e2a4b351",
+  "result_id": "4107bc450afa90212469dbc15616980fc9413144027cf9988fe15f2922210f80",
+  "run_id": "original",
+  "schema": "research-submission-v1",
+  "scope": "isolated_research_only",
+  "status": "succeeded",
+  "submission_id": "original",
+  "verified_at": "2026-10-17T05:08:42.135766+00:00",
+  "check_scope": "current_case_and_live_integrity"
+}

@@ -1,6 +1,8 @@
 * text=auto eol=lf
-vendor/** -text
+vendor/** -text whitespace=cr-at-eol
 *.png binary
 data/** -text whitespace=cr-at-eol
 output/** -text whitespace=cr-at-eol
 evidence/** -text whitespace=cr-at-eol
+# Unified diff context contains intentional leading spaces on blank lines.
+evidence/*.patch -text -whitespace

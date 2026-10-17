@@ -6,6 +6,7 @@
 
 ## 交付入口
 
+- [交付总览](output/index.html)：统一打开回测、算法对照、机构对标和可靠性验收。
 - [SPY 回测 HTML](output/runs/spy-v2/report.html)：嵌入 PNG、完整指标、53 笔成交、2,766 日现金/持仓/净值账本。
 - [真实现有算法对比](evidence/existing-comparison-v2/report.html)：固定 finresearch-lab 原提交；同 SPY、同时间端点，策略及成交口径差异明示。
 - [机构三指标对标](evidence/paired-replication-v1/report.html)：Alpha Architect 讨论的 Glenn SPY/TLT 研究，对照 IFTA 原文表 1；收益、回撤、交易次数全部相对偏差 ≤10%。
@@ -17,12 +18,16 @@
 Python 3.11，PowerShell；命令在仓库根目录执行。冻结数据已随仓库保存，不需要数据 API 密钥。
 
 ```powershell
+git clone --branch experiment/spy-backtest-reliability https://github.com/ninglinLiu/etf-cio-reliability.git
+cd etf-cio-reliability
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.lock.txt
 .venv\Scripts\python.exe scripts/reproduce.py --output scratch/reproduce-001
 ```
 
 该命令执行 42 项测试、主回测、当前输入校验、独立现金/股数对账、真实旧算法比较、机构复现、三场景和实际 CLI 消费校验。每步的命令、退出码、stdout/stderr 保存在新目录；期望拒绝的步骤必须返回 2 才通过。目录已存在时拒绝重写。
+
+已从提交 `ecebd2b` 创建干净副本实际运行：11 / 11 步骤通过，42 项测试通过，重算 input_id 和 result_id 与最终报告逐字相同。命令输出与环境说明见 [干净副本复现证据](evidence/clean-reproduction-v2/provenance.json)。仓库为私有仓库，克隆需要已有访问权限。
 
 ## 单独运行与研究交接
 
