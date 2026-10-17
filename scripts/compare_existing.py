@@ -12,7 +12,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from etf_lab.artifacts import encoded, read_json, sha, write_new
-from etf_lab.engine import Config, metrics, run_backtest
+from etf_lab.engine import Config, metrics
+from etf_lab.backtrader_engine import run_backtest
 
 
 def load_existing():

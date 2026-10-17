@@ -9,7 +9,8 @@ import platform
 import re
 import subprocess
 
-from .engine import Config, DataError, run_backtest, simplified_reference
+from .engine import Config, DataError, simplified_reference
+from .backtrader_engine import run_backtest
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -50,7 +51,7 @@ def code_identity():
     except (OSError, subprocess.CalledProcessError):
         revision = "uncommitted"
     versions = {}
-    for name in ("yfinance", "matplotlib", "exchange-calendars", "numpy", "pandas"):
+    for name in ("yfinance", "matplotlib", "exchange-calendars", "numpy", "pandas", "backtrader"):
         try: versions[name] = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError: versions[name] = "not-installed"
     return {"calculation_commit": revision, "file_hashes": hashes, "source_digest": sha(encoded(hashes)),
@@ -64,6 +65,7 @@ def inputs(snapshot_path: Path, cfg: Config):
 def frozen_inputs(raw: bytes, cfg: Config):
     snapshot = json.loads(raw)
     manifest = {"schema": "etf-input-v1", "strategy": cfg.to_dict(), "snapshot_sha256": sha(raw),
+                "execution_engine": "backtrader-1.9.78.123-fixed-close-orders-v1",
                 "source": snapshot.get("source"), "source_url": snapshot.get("source_url"),
                 "data_cutoff": snapshot.get("data_cutoff"), "observed_at": snapshot.get("observed_at"),
                 "price_basis": snapshot.get("price_basis"), "code": code_identity()}
@@ -154,6 +156,8 @@ def execute(snapshot_path: Path, cfg: Config, run_id: str, output: Path, fault: 
         if fault == "compute":
             raise ArithmeticError("Simulated arithmetic failure")
         result = run_backtest(snapshot, cfg)
+        from .execution_contract import validate_execution
+        result["execution_validation"] = validate_execution(result, snapshot, cfg)
         result["simplified_reference"] = simplified_reference(snapshot, cfg)
         result["acceptance"] = {"existing_algorithm_comparison": "SEPARATE_VERSIONED_COMPARISON_REPORT",
                                 "institutional_replication": "SEPARATE_REPLICATION_REPORT_WITH_LIMITATIONS",

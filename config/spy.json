@@ -1,5 +1,6 @@
 {
-  "strategy_version": "spy-sma-cross-v1",
+  "strategy_version": "spy-sma-cross-v2-fixed-close-orders",
+  "allocation": 0.95,
   "fast": 20,
   "slow": 50,
   "start": "2015-01-02",

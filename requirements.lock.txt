@@ -1,4 +1,5 @@
 beautifulsoup4==4.15.0
+backtrader==1.9.78.123
 certifi==2026.7.22
 cffi==2.1.1
 charset-normalizer==3.5.2

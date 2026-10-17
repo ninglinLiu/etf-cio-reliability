@@ -85,6 +85,14 @@ def gate(output: Path, case_id: str, run_id: str):
     folder = output / "runs" / checked_id(run_id)
     receipt = verify(folder)  # Failure is reported before any input mismatch.
     verify(folder, case["input"])
+    from .execution_contract import validate_execution
+    result = read_json(folder / "result.json")
+    try:
+        checked = validate_execution(result, read_json(folder / "snapshot.json"), Config(**case["input"]["strategy"]))
+        if result.get("execution_validation") != checked:
+            raise ValueError("Missing or inconsistent execution validation")
+    except (ValueError, TypeError, KeyError, IndexError):
+        raise EvidenceError("EXECUTION_CONTRACT_REJECTED") from None
     return case, receipt
 
 

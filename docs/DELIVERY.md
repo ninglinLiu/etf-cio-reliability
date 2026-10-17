@@ -1,3 +1,12 @@
+# 2026-10-17 Backtrader 修正版
+
+下方 d489cf5 及之前的交付记录为历史。由于发现旧引擎在次日开盘反算股数，当前主运行改用 Backtrader。机构数值复现及旧账本保留，但不再把原验收数字解释为无前视偏差的证明。
+
+新主报告 output/runs/spy-backtrader-v1/report.html；全套新复现输出 evidence/backtrader-reproduction-v1/；技术说明 docs/HARNESS_REVIEW.md。回退可在独立 checkout 查看 d489cf5，但不能把该版本恢复为“当前已验证无前视”的主方案。无真实系统迁移；不得覆盖已有运行或失败。
+
+---
+以下为原交付归档：
+
 # 最终交付记录 · 2026-10-17
 
 计算源码版本：`244fe1fa3f05b23c373230456510137f0dd40ffd`。实验分支 `experiment/spy-backtest-reliability`；GitHub 私有仓库 [ninglinLiu/etf-cio-reliability](https://github.com/ninglinLiu/etf-cio-reliability)。交付文件所属提交可由 `git rev-parse HEAD` 查看；未合并主分支。

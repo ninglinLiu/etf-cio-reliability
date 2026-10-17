@@ -1,21 +1,40 @@
-# ETF 回测与研究结果可靠性验收
+# Backtrader ETF 回测与研究结果验收
 
-已完成可逐笔复核的 SPY 样板、真实现有算法对照、机构文章三项数值复现，以及独立研究交接的三个可靠性场景。
+本项目做两件事：用事件驱动回测验证策略收益怎么产生；用代码约束哪些运行结果可以被后续研究流程读取。没有 LLM 提示词链，也不是完整的 Agent harness。
 
-**范围变更（2026-10-17 用户确认）：** 用户没有任务书预设的原 CIO 项目，任务二改为独立研究结果可靠性验收。本项目没有接入既有 cio.py，不创建调度框架，也不连接真实投资审批或交易。
+**2026-10-17 更正：** 上一版自写引擎用次日开盘价反算可买股数，不能代表“前收盘已提交固定数量订单”。已将主运行替换为 **Backtrader 1.9.78.123**，旧结果保留为历史。测试通过、哈希一致、机构数字接近，都不等于“所有前视偏差已消除”。
+
+## 两个任务各负责什么
+
+| 层 | 责任 | 核心实现 |
+|---|---|---|
+| 回测执行 | 按时间推进信号、订单、成交、现金、持仓 | Backtrader Cerebro / SMA / Market / BackBroker；`etf_lab/backtrader_engine.py` 做适配 |
+| 执行契约 | 检查信号日固定数量、下一交易日成交、禁用作弊模式 | `etf_lab/execution_contract.py`；每次运行、提交和读取重新检查 |
+| 结果可靠性 | 冻结输入、版本匹配、失败拒绝、幂等、历史和完整性 | `etf_lab/artifacts.py`、`etf_lab/handoff.py` |
+| 测试 harness | 故障注入、时间前缀对照、负面场景及实际退出码 | `tests/`、`scripts/reproduce.py` |
+
+没有任务书假设的原 CIO 项目；经用户确认，任务二为独立研究结果可靠性验收。没有交易连接、投资判断、CRO 或审批改动。完整 Agent 的模型循环、工具权限、进程沙箱不在本次实现中。
+
+## 数据时序如何约束
+
+1. 固定策略读取流式日线，关闭 `preload`、`runonce`、cheat-on-open、cheat-on-close；不存在预先加载到框架 line buffer 的未来日线。
+2. t 日收盘算 SMA20/50 并提交固定数量 Market 订单。股数只依赖当时现金、当时收盘和既定成本，默认用 95% 现金，余量仅作跳空缓冲。
+3. t+1 日框架按开盘加声明滑点/冲击尝试成交；钱不够就 Margin 拒单，不事后缩量、不重试凑成交。执行日高低收和成交量不能决定当日开盘成交。
+4. 专项测试：未来尾段扰动、多个日期截断重放、次日开盘变化不影响此前订单、未来 line 正向访问失败、同日成交/事后改量拒绝、重新封存的错误策略配置仍拒绝交接。
+
+这是**固定受审策略的因果执行约束**。任意 Python 仍可另读文件/联网；尚无进程级数据沙箱。当前下载的 Yahoo 行情不是历史 point-in-time 数据，分红实际支付日不可得，股票历史成分/退市/财报版本未解决。主适配器拒绝拆股数据。ETF 样板不能外推成选股或历史 LLM 回测可信。
 
 ## 交付入口
 
-- [交付总览](output/index.html)：统一打开回测、算法对照、机构对标和可靠性验收。
-- [SPY 回测 HTML](output/runs/spy-v2/report.html)：嵌入 PNG、完整指标、53 笔成交、2,766 日现金/持仓/净值账本。
-- [真实现有算法对比](evidence/existing-comparison-v2/report.html)：固定 finresearch-lab 原提交；同 SPY、同时间端点，策略及成交口径差异明示。
-- [机构三指标对标](evidence/paired-replication-v1/report.html)：Alpha Architect 讨论的 Glenn SPY/TLT 研究，对照 IFTA 原文表 1；收益、回撤、交易次数全部相对偏差 ≤10%。
-- [独立可靠性三场景](evidence/reliability-v1/report.html)：全部使用隔离合成数据；实际回执、调用日志、失败恢复与篡改副本可查看。
-- [验收清单](docs/ACCEPTANCE.md)、[交接契约与接入位置](docs/INTEGRATION_PLAN.md)、[方法边界](docs/METHODOLOGY.md)、[版本、复现与回退](docs/DELIVERY.md)。
+- [总览](output/index.html)、[新版 Backtrader 主报告](output/runs/spy-backtrader-v1/report.html)。
+- [技术复核与问题定位](docs/HARNESS_REVIEW.md)：原实现局限、替换位置和测试边界。
+- [新版算法对照](evidence/backtrader-reproduction-v1/existing-comparison/report.html)、[新版可靠性场景](evidence/backtrader-reproduction-v1/isolated-reliability/report.html)。
+- [机构文章复现](evidence/paired-replication-v1/report.html)：原文收益、回撤、交易次数均有精确数字，三项偏差低于 10%。**其同收盘成交近似仅用于论文数值重放，不作为无前视偏差的证据。**
+- [验收及范围](docs/ACCEPTANCE.md)、[交接契约](docs/INTEGRATION_PLAN.md)、[历史版本与回退](docs/DELIVERY.md)。
 
-## 安装并一次完成离线复现
+## 安装和复现
 
-Python 3.11，PowerShell；命令在仓库根目录执行。冻结数据已随仓库保存，不需要数据 API 密钥。
+Python 3.11，PowerShell；私有仓库需要已有访问权限。离线计算使用已冻结数据，不需要行情 API 密钥。
 
 ```powershell
 git clone --branch experiment/spy-backtest-reliability https://github.com/ninglinLiu/etf-cio-reliability.git
@@ -25,11 +44,7 @@ python -m venv .venv
 .venv\Scripts\python.exe scripts/reproduce.py --output scratch/reproduce-001
 ```
 
-该命令执行 42 项测试、主回测、当前输入校验、独立现金/股数对账、真实旧算法比较、机构复现、三场景和实际 CLI 消费校验。每步的命令、退出码、stdout/stderr 保存在新目录；期望拒绝的步骤必须返回 2 才通过。目录已存在时拒绝重写。
-
-已从提交 `ecebd2b` 创建干净副本实际运行：11 / 11 步骤通过，42 项测试通过，重算 input_id 和 result_id 与最终报告逐字相同。命令输出与环境说明见 [干净副本复现证据](evidence/clean-reproduction-v2/provenance.json)。仓库为私有仓库，克隆需要已有访问权限。
-
-## 单独运行与研究交接
+完整命令执行自动测试、回测、独立对账、旧算法对照、论文数值复现和三个可靠性场景。实际命令、退出码和 stdout/stderr 都保留。目录已存在时拒绝覆盖。
 
 ```powershell
 .venv\Scripts\python.exe -m etf_lab run --snapshot data/spy.json --config config/spy.json --run-id research-001 --output scratch/research
@@ -38,23 +53,6 @@ python -m venv .venv
 .venv\Scripts\python.exe -m etf_lab research-read --case-id spy-case-001 --submission-id submit-001 --output scratch/research
 ```
 
-当前案例必须显式传给 research-read；它重新检查案例、代码版本、冻结输入及原产物。已经通过的交接记录不能绕过后来发生的内容篡改。变更输入需要新案例；主动重算使用新运行 ID；同一提交键带不同案例或运行会被拒绝。不可把缓存中的 downstream_eligible: true 当作永久许可。
+成功退出 0，计算/模拟数据失败退出 1，失效/冲突/完整性/执行契约拒绝退出 2。必须每次传入当前案例；不能缓存一次 `downstream_eligible=true` 后永远跳过校验。更改框架、参数、配置、数据或费用必须新建案例/运行。
 
-```powershell
-# 仅检查历史完整性；不代表当前适用
-.venv\Scripts\python.exe -m etf_lab verify --run output/runs/spy-v1
-# 同时检查当前代码、配置和快照；最新冻结运行应通过
-.venv\Scripts\python.exe -m etf_lab verify --run output/runs/spy-v2 --snapshot data/spy.json --config config/spy.json
-# 全部使用合成数据的独立三场景
-.venv\Scripts\python.exe scripts/demo_reliability.py --output scratch/demo-001
-```
-
-正常成功退出 0，计算/模拟数据失败退出 1，冲突/失效/完整性拒绝退出 2。故障注入 --simulate-failure data 或 compute 明确标注 SIMULATED；不是实际供应商故障。旧失败 ID 不会被改写为成功。
-
-## 结果与限制
-
-主样板 2015-01-02—2025-12-31：累计收益 134.95%，年化 8.09%，最大回撤 -28.77%，夏普 0.7542，已平仓胜率 61.54%，53 笔成交 / 26 次完整交易。滑点 5 bp、手续费 $1/笔、流动性参与率超 1% 时附加冲击 10 bp；分红按除息日现金到账的明确简化处理。
-
-机构模型与主样板独立：原文累计收益 294.1%，复现 295.3591%；原文回撤 18.9%，复现 18.8646%；原文与复现均 45 笔买卖。原文仅称“名义交易成本”，本地在重放前固定 $1/笔；该口径差异及同收盘成交假设在报告中完整说明。未用回测结果优化参数。Cambria 因缺原文精确交易次数被排除，失败候选记录仍保留。
-
-ETF 样板不证明选股可信；不宣称消除历史成分股、退市、财报版本或 LLM 未来知识污染。哈希校验依赖可信原始清单/Git 提交，不是管理员绝对防篡改。实验分支 experiment/spy-backtest-reliability 未合并主分支；相邻项目没有改动。
+`output/runs/spy-v1`、`spy-v2` 及原有证据仍可按历史完整性校验，但不再是当前有效主回测。实验分支不合并主分支。

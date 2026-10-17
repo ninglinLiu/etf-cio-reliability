@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from etf_lab.artifacts import EvidenceError, execute, read_json, write_new
+from etf_lab.artifacts import EvidenceError, execute, read_json, write_new, encoded, sha, verify
 from etf_lab.handoff import consume, freeze_case, load_case, submit
 from fixtures import sample
 from test_artifacts import lightweight_report
@@ -27,6 +27,26 @@ class ResearchContract(unittest.TestCase):
     def tearDown(self):
         self.renderer.stop()
         self.temp.cleanup()
+
+    def test_valid_hashes_do_not_make_invalid_execution_policy_acceptable(self):
+        # Deliberately produce an internally re-sealed bad result ONLY in TemporaryDirectory.
+        # This demonstrates semantic rejection in addition to byte-integrity checks.
+        folder = self.root / "runs/run1"
+        result = read_json(folder / "result.json")
+        result["engine"]["cheat_on_close"] = True
+        (folder / "result.json").write_bytes(encoded(result))
+        receipt = read_json(folder / "receipt.json")
+        receipt["result_id"] = sha(encoded(result))
+        (folder / "receipt.json").write_bytes(encoded(receipt))
+        manifest = read_json(folder / "integrity.json")
+        manifest["files"] = {name: sha((folder/name).read_bytes()) for name in manifest["files"]}
+        (folder / "integrity.json").write_bytes(encoded(manifest))
+        self.assertEqual(verify(folder)["status"], "succeeded")  # byte consistency only
+        rejected = submit(self.root, "invalid-policy", "v1", "run1")
+        self.assertEqual(rejected["status"], "rejected")
+        self.assertIn("EXECUTION_CONTRACT_REJECTED", rejected["reason"])
+        with self.assertRaisesRegex(EvidenceError, "EXECUTION_CONTRACT_REJECTED"):
+            consume(self.root, "first", "v1")
 
     def test_all_input_changes_block_submission_and_consumption(self):
         original = (self.root / "runs/run1/result.json").read_bytes()

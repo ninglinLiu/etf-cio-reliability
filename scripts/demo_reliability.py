@@ -22,6 +22,7 @@ def main():
     output = parser.parse_args().output
     if output.exists(): raise SystemExit("Choose a NEW isolated directory; never overwrite evidence")
     snapshot, cfg = sample()
+    cfg = replace(cfg, allocation=.5)  # Fixture gaps are large; exercise actual fills too.
     source = output / "fixtures/spy.json"
     write_new(source, snapshot)
     write_new(output / "fixtures/config.json", cfg.to_dict())

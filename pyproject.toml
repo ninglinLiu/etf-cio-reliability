@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "etf-cio-reliability"
 version = "0.1.0"
-description = "Auditable single-ETF research backtest; CIO integration pending original contract"
+description = "Backtrader ETF research and independent result acceptance"
 requires-python = ">=3.11"
-dependencies = ["yfinance", "matplotlib", "exchange-calendars"]
+dependencies = ["yfinance", "matplotlib", "exchange-calendars", "backtrader==1.9.78.123"]
 
 [tool.setuptools.packages.find]
 include = ["etf_lab*"]

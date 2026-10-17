@@ -28,6 +28,7 @@ class Config:
     dividend_policy: str = "cash_on_ex_date"
     terminal_policy: str = "mark_to_market"
     risk_free_annual: float = 0.0
+    allocation: float = 0.95
 
     def __post_init__(self):
         for name in ("fast", "slow", "adv_window", "annualization"):
@@ -48,6 +49,8 @@ class Config:
             raise ValueError("Unsupported dividend or terminal convention")
         if not self.strategy_version:
             raise ValueError("Strategy version is required")
+        if isinstance(self.allocation, bool) or not isinstance(self.allocation, (int, float)) or not 0 < self.allocation <= 1:
+            raise ValueError("allocation must be in (0, 1]")
 
     def to_dict(self):
         return asdict(self)
@@ -169,6 +172,7 @@ def metrics(equity: list[dict], initial: float, cfg: Config, closed_pnls: list[f
 
 
 def run_backtest(snapshot: dict, cfg: Config) -> dict:
+    """Legacy diagnostic only: sizes at next open; NOT the main execution engine."""
     rows = validate(snapshot, cfg)
     signals = signal_series(rows, cfg)
     cash, shares = cfg.initial_cash, 0
