@@ -1,0 +1,14 @@
+{
+  "case_id": "spy-backtrader-v1",
+  "cio_integrated": false,
+  "created_at": "2026-10-17T13:25:43.165714+00:00",
+  "downstream_eligible": true,
+  "input_id": "85b32457b145d4d8506fff23a7d89d0d21cf4ca4781382633966e583e19bae8f",
+  "request_id": "cd88ad447a0a7eae2a3c3c356a3f143cfaa8adaa88d0a4394c9608a783d93c1d",
+  "result_id": "ffed5204f5f7251bef8430c8fa03e0fb157954c510400e29dffa76e4b54a67a3",
+  "run_id": "spy-backtrader-v1",
+  "schema": "research-submission-v1",
+  "scope": "isolated_research_only",
+  "status": "succeeded",
+  "submission_id": "spy-backtrader-v1"
+}

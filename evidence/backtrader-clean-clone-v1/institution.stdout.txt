@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "observations": 2517,
+  "comparisons": [
+    {
+      "metric": "total_return",
+      "reference": 2.941,
+      "reproduced": 2.9535907881965757,
+      "relative_deviation": 0.004281124854327061,
+      "passed": true
+    },
+    {
+      "metric": "annualized_return",
+      "reference": 0.146,
+      "reproduced": 0.1462938413434518,
+      "relative_deviation": 0.002012611941450765,
+      "passed": true
+    },
+    {
+      "metric": "max_drawdown",
+      "reference": -0.189,
+      "reproduced": -0.18864559358857058,
+      "relative_deviation": 0.0018751661980392585,
+      "passed": true
+    },
+    {
+      "metric": "order_count",
+      "reference": 45,
+      "reproduced": 45,
+      "relative_deviation": 0.0,
+      "passed": true
+    }
+  ]
+}

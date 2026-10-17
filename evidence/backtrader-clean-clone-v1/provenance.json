@@ -1,0 +1,55 @@
+{
+  "cloned_commit": "851b4659429599a357d098bd57004093c1a309ad",
+  "clean_worktree_before_and_after": true,
+  "runtime": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "environment": "Fresh Git checkout using existing locked-dependency Python virtual environment; offline frozen data",
+  "checks_passed": 12,
+  "unit_tests_passed": 61,
+  "input_id_matches_final_run": "85b32457b145d4d8506fff23a7d89d0d21cf4ca4781382633966e583e19bae8f",
+  "result_id_matches_final_run": "ffed5204f5f7251bef8430c8fa03e0fb157954c510400e29dffa76e4b54a67a3",
+  "history_checks": [
+    {
+      "name": "old-historical",
+      "exit_code": 0,
+      "expected": 0
+    },
+    {
+      "name": "old-current-rejected",
+      "exit_code": 2,
+      "expected": 2
+    }
+  ],
+  "saved_output_hashes": {
+    "audit.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "audit.stdout.txt": "68a700d7b347556eb36ebd31f07c6d41906b1b2ab32fddb790b9759209662834",
+    "backtest.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backtest.stdout.txt": "85120942598f46d4480a0c345704a7d232a6a8222fa51756d3f037bcd10dccb6",
+    "causality.json": "11d686cd4ecefca0e36837a6a1a41f8d813681b7022b980ad8e203036ad8df5c",
+    "causality.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "causality.stdout.txt": "fe3ff29559b1c3eba33366c547f93d6aa488b2a6657d22eea49e64332cd07e37",
+    "consumer-failed.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "consumer-failed.stdout.txt": "31d7fa63012e74a475788ce78d2e2e46a1157c3c689f339f2978cb4bc1595859",
+    "consumer-stale.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "consumer-stale.stdout.txt": "395ba3d08e248f2257b3536faf799731ead4e663c57d765ba143a0c86e6b7b82",
+    "consumer-success.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "consumer-success.stdout.txt": "714ca07334a7e398d5791648ca0f86cb650d33ae05057c69ce23b3ad7a347968",
+    "consumer-tampered.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "consumer-tampered.stdout.txt": "682626cee1280e019c09c4a231b585e0e5d66a7a2ff09248e69305d4d69a80bf",
+    "existing-comparison.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "existing-comparison.stdout.txt": "81fd3247685604cd1d02431f3c1397383a92b663552961f15bd0dabf274fb42b",
+    "institution.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "institution.stdout.txt": "4c7093b44db7463898515f172db3e813dff7e17864d7c9d0d92b99299f44c5f3",
+    "old-current-rejected.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "old-current-rejected.stdout.txt": "aabb0829331536fd83d73147ae0d1c916738f11c3253b400f277423a9625d170",
+    "old-historical.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "old-historical.stdout.txt": "bada1011541c07c5f4171d2370e33d3218258b20a2494f964ac7c52899aa07e0",
+    "replayed-receipt.json": "d551039e1374d3db0234f047f1d01c2db428d9afd18794dbc41afd61c9969945",
+    "reproduction.json": "f4a4bf4404d1ec49a15d4b34e90208bb45d0ad730a23b264544b103a665d75f2",
+    "tests.stderr.txt": "4a8616539b05f943e78845d5e45736b3c13b7173afd8995fc866f49016074410",
+    "tests.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "three-scenarios.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "three-scenarios.stdout.txt": "883384cc2b36fab9184939e54ba2334600e8baf53c012cbf6a74fc7bb7ce03a6",
+    "verify.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verify.stdout.txt": "0ef3922dd64fe5cf6673230e97ccbe1be9e0deabd83bbcf0bdd4b790c712d075"
+  }
+}

@@ -4,6 +4,12 @@
 
 新主报告 output/runs/spy-backtrader-v1/report.html；全套新复现输出 evidence/backtrader-reproduction-v1/；技术说明 docs/HARNESS_REVIEW.md。回退可在独立 checkout 查看 d489cf5，但不能把该版本恢复为“当前已验证无前视”的主方案。无真实系统迁移；不得覆盖已有运行或失败。
 
+计算代码提交 `42a6175`；从 `851b465` 的干净副本完成新版完整 12 步复现和 61 项测试。实际命令、退出码、stdout/stderr、环境及文件哈希位于 `evidence/backtrader-clean-clone-v1/`。复用已安装锁定依赖的 Python 3.11 环境；克隆后的代码与冻结数据为全新副本。重算 input_id/result_id 与正式主运行完全一致。旧 spy-v2 历史完整性退出 0，当前适用性检查退出 2。
+
+新 input_id `85b32457b145d4d8506fff23a7d89d0d21cf4ca4781382633966e583e19bae8f`；result_id `ffed5204f5f7251bef8430c8fa03e0fb157954c510400e29dffa76e4b54a67a3`。真实历史 SPY 结果已通过同名 `spy-backtrader-v1` 冻结案例、研究提交与读取接口，回执在 `output/submissions/spy-backtrader-v1/`，调用轨迹追加在 `output/calls.jsonl`；仅研究实验，无真实持仓写入。
+
+源码变更另存 `evidence/backtrader-migration.patch`，对比基线 d489cf5。旧代码/旧结果仍保留，旧自写引擎仅作诊断反例。当前主适配器不支持拆股，明确拒绝；不宣称所有前视偏差已消除。
+
 ---
 以下为原交付归档：
 

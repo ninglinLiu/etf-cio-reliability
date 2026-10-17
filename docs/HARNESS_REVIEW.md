@@ -47,3 +47,5 @@ Backtrader 官方规则：Market 订单在下一根 bar 开盘尝试成交；完
 执行契约检查在 `artifacts.execute` 生成成功结果之前运行，在 `handoff.gate` 提交/消费时重新运行。`test_valid_hashes_do_not_make_invalid_execution_policy_acceptable` 在临时目录人为启用同收盘成交并重算文件哈希：文件一致性通过，业务提交/读取仍因 `EXECUTION_CONTRACT_REJECTED` 拒绝。这证明哈希检查和执行规则检查是两道不同检查。
 
 本次没有把 Agent 的任意代码、文件读取或网络权限纳入安全沙箱。若以后接 LLM，优先让它只输出受限策略配置，由冻结版本代码运行；若允许它执行策略代码，需要另外实现进程/网络/文件隔离和仅提供截至时点的只读数据。禁止未来数据访问也不能消除 LLM 权重已包含历史未来事件的知识污染。
+
+完整 12 步入口也已在 `851b465` 干净副本实际完成（61 项测试），证据见 `evidence/backtrader-clean-clone-v1/provenance.json`；并检查旧报告历史可读、当前输入不匹配拒绝。新主结果通过真实历史 SPY 的研究案例提交和读取，回执位于 `output/submissions/spy-backtrader-v1/`。

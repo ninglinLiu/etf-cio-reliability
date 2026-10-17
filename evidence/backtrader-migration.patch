@@ -1,0 +1,678 @@
+diff --git a/config/spy.json b/config/spy.json
+index 4d4c7cd..1ba2375 100644
+--- a/config/spy.json
++++ b/config/spy.json
+@@ -2 +2,2 @@
+-  "strategy_version": "spy-sma-cross-v1",
++  "strategy_version": "spy-sma-cross-v2-fixed-close-orders",
++  "allocation": 0.95,
+diff --git a/etf_lab/artifacts.py b/etf_lab/artifacts.py
+index c491c52..6f110d2 100644
+--- a/etf_lab/artifacts.py
++++ b/etf_lab/artifacts.py
+@@ -12 +12,2 @@ import subprocess
+-from .engine import Config, DataError, run_backtest, simplified_reference
++from .engine import Config, DataError, simplified_reference
++from .backtrader_engine import run_backtest
+@@ -53 +54 @@ def code_identity():
+-    for name in ("yfinance", "matplotlib", "exchange-calendars", "numpy", "pandas"):
++    for name in ("yfinance", "matplotlib", "exchange-calendars", "numpy", "pandas", "backtrader"):
+@@ -66,0 +68 @@ def frozen_inputs(raw: bytes, cfg: Config):
++                "execution_engine": "backtrader-1.9.78.123-fixed-close-orders-v1",
+@@ -156,0 +159,2 @@ def execute(snapshot_path: Path, cfg: Config, run_id: str, output: Path, fault:
++        from .execution_contract import validate_execution
++        result["execution_validation"] = validate_execution(result, snapshot, cfg)
+diff --git a/etf_lab/backtrader_engine.py b/etf_lab/backtrader_engine.py
+new file mode 100644
+index 0000000..846d135
+--- /dev/null
++++ b/etf_lab/backtrader_engine.py
+@@ -0,0 +1,221 @@
++"""Backtrader owns matching, order states, cash and positions.
++
++Trusted fixed strategy, NOT a sandbox for arbitrary Python or an LLM.
++The feed advances one completed bar at a time. No preloaded future line values.
++The only broker extensions are explicit ex-date distributions and a slippage
++parameter selected from a fixed order and lagged ADV. No custom matching loop.
++"""
++from datetime import datetime
++import math
++
++import backtrader as bt
++
++from .engine import Config, DataError, metrics, validate
++
++
++class FrozenFeed(bt.feed.DataBase):
++    lines = ("dividend",)
++    params = (("rows", None),)
++
++    def start(self):
++        super().start()
++        self._rows = iter(self.p.rows)
++
++    def _load(self):
++        row = next(self._rows, None)
++        if row is None:
++            return False
++        self.lines.datetime[0] = bt.date2num(datetime.fromisoformat(row["date"]))
++        for name in ("open", "high", "low", "close", "volume", "dividend"):
++            getattr(self.lines, name)[0] = row[name]
++        self.lines.openinterest[0] = 0
++        return True
++
++
++class Fees(bt.CommInfoBase):
++    params = (("stocklike", True), ("commtype", bt.CommInfoBase.COMM_FIXED),
++              ("fixed", 0.0), ("bps", 0.0))
++
++    def _getcommission(self, size, price, pseudoexec):
++        return self.p.fixed + abs(size) * price * self.p.bps / 10000 if size else 0.0
++
++
++class ResearchBroker(bt.brokers.BackBroker):
++    params = (("cfg", None), ("feed", None))
++
++    def next(self):
++        data = self.p.feed
++        self.opening_cash = self.getcash()
++        self.opening_shares = self.getposition(data).size
++        self.distribution = self.opening_shares * data.dividend[0]
++        if self.distribution:
++            # Queued cash is included by BackBroker's end-of-bar valuation.
++            # Existing holdings earn it even if sold today; today's buyer does not.
++            # It is not available to today's pending opening order.
++            self.add_cash(self.distribution)
++        super().next()
++
++    def _try_exec_market(self, order, popen, phigh, plow):
++        cfg = self.p.cfg
++        adv = order.info["prior_adv_dollars"]
++        participation = abs(order.created.size) * popen / adv
++        impact = cfg.impact_bps if participation > cfg.impact_threshold else 0.0
++        order.addinfo(impact_bps=impact, participation=participation, reference_open=popen)
++        # Explicit fixed bps model: never cap using the execution day's future H/L.
++        self.set_slippage_perc((cfg.slippage_bps + impact) / 10000,
++                              slip_open=True, slip_match=True, slip_out=True)
++        super()._try_exec_market(order, popen, phigh, plow)
++
++
++class SmaStrategy(bt.Strategy):
++    params = (("cfg", None), ("first_signal_date", None))
++
++    def __init__(self):
++        self.cfg = self.p.cfg
++        self.fast = bt.ind.SMA(self.data.close, period=self.cfg.fast)
++        self.slow = bt.ind.SMA(self.data.close, period=self.cfg.slow)
++        self.dollar_volume = self.data.close * self.data.volume
++        self.adv = bt.ind.SMA(self.dollar_volume, period=self.cfg.adv_window)
++        self.pending = None
++        self.orders, self.fills, self.days, self.events, self.rejections = [], [], [], [], []
++        self.closed_pnls = []
++        self.entry_cost = self.cycle_dividends = self.dividend_total = 0.0
++        self.entry_date = None
++        self.last_action = None
++
++    def notify_order(self, order):
++        date = self.data.datetime.date(0).isoformat()
++        status = order.getstatusname()
++        intent = self.orders[order.info["intent_index"]]
++        # Per-run logical sequence, not Backtrader's process-global ref counter.
++        intent["events"].append({"date": date, "status": status})
++        if status == "Completed":
++            qty, price, fee = abs(order.executed.size), order.executed.price, order.executed.comm
++            side = "BUY" if order.isbuy() else "SELL"
++            gross = qty * price
++            flow = -gross - fee if order.isbuy() else gross - fee
++            realized = None
++            # Current ex-date dividend belongs to the closing position.
++            if order.isbuy():
++                self.entry_cost, self.cycle_dividends, self.entry_date = -flow, 0.0, date
++            else:
++                realized = flow - self.entry_cost + self.cycle_dividends + self.broker.distribution
++                self.closed_pnls.append(realized)
++            reference = order.info["reference_open"]
++            self.fills.append({"date": date, "signal_date": intent["date"], "side": side,
++                "quantity": qty, "price": price, "notional": gross, "fee": fee,
++                "cash_change": flow, "reference_open": reference,
++                "slippage_cost": qty * reference * self.cfg.slippage_bps / 10000,
++                "impact_cost": qty * reference * order.info["impact_bps"] / 10000,
++                "impact_bps": order.info["impact_bps"], "participation": order.info["participation"],
++                "realized_pnl": realized, "entry_date": self.entry_date,
++                "entry_cost_including_fee": self.entry_cost,
++                "cycle_dividends": self.cycle_dividends + (self.broker.distribution if not order.isbuy() else 0),
++                "cash_after": self.broker.getcash(), "shares_after": self.position.size,
++                "order_sequence": intent["sequence"], "broker_status": status})
++            if not order.isbuy():
++                self.entry_cost = self.cycle_dividends = 0.0
++                self.entry_date = None
++        elif status in ("Margin", "Rejected", "Canceled", "Expired"):
++            self.rejections.append({"date": date, "signal_date": intent["date"],
++                "quantity": intent["quantity"], "reason": "BROKER_" + status.upper()})
++        if not order.alive():
++            self.pending = None
++
++    def prenext(self):
++        pass  # Warm-up only; validated sample starts after all indicators are ready.
++
++    def next(self):
++        cfg, date = self.cfg, self.data.datetime.date(0).isoformat()
++        action = None
++        if len(self.data) > cfg.slow:
++            previous = self.fast[-1] - self.slow[-1]
++            current = self.fast[0] - self.slow[0]
++            if previous <= 0 < current: action = "BUY"
++            elif previous >= 0 > current: action = "SELL"
++        self.last_action = action
++        distribution = self.broker.distribution
++        if cfg.start <= date <= cfg.end:
++            self.dividend_total += distribution
++            if distribution:
++                if self.position: self.cycle_dividends += distribution
++                self.events.append({"date": date, "kind": "dividend",
++                    "eligible_shares": self.broker.opening_shares, "per_share": self.data.dividend[0],
++                    "cash_change": distribution, "assumption": "Ex-date end-of-session cash; payment date unavailable"})
++            todays = [t for t in self.fills if t["date"] == date]
++            flow = sum(t["cash_change"] for t in todays)
++            cash, shares = self.broker.getcash(), self.position.size
++            residual = cash - self.broker.opening_cash - distribution - flow
++            if cash < -1e-8 or shares < 0 or abs(residual) > 1e-7:
++                raise ArithmeticError("Backtrader ledger failed independent cash invariant")
++            self.days.append({"date": date, "open": self.data.open[0], "close": self.data.close[0],
++                "cash_before": self.broker.opening_cash, "shares_before": self.broker.opening_shares,
++                "dividend_cash": distribution, "trade_cash": flow, "cash": cash, "shares": shares,
++                "market_value": shares * self.data.close[0], "equity": self.broker.getvalue(),
++                "cash_reconciliation_residual": residual, "prior_adv_dollars": self.adv[-1],
++                "fast": self.fast[0], "slow": self.slow[0], "signal_after_close": action})
++        if date < self.p.first_signal_date or date > cfg.end or self.pending or not action:
++            return
++        if action == "BUY" and not self.position:
++            # All terms are observable at this close. Never read next open here.
++            conservative_price = self.data.close[0] * (1 + (cfg.slippage_bps + cfg.impact_bps) / 10000)
++            budget = self.broker.getcash() * cfg.allocation
++            quantity = max(0, math.floor((budget - cfg.fee_fixed) /
++                           (conservative_price * (1 + cfg.fee_bps / 10000))))
++            if not quantity:
++                self.rejections.append({"date": date, "signal_date": date, "quantity": 0,
++                                        "reason": "INSUFFICIENT_CASH_AT_SUBMISSION"})
++                return
++        elif action == "SELL" and self.position:
++            quantity = self.position.size
++        else:
++            return
++        adv = self.adv[0]
++        if adv <= 0: raise DataError("Zero completed-session ADV")
++        intent = {"sequence": len(self.orders) + 1, "date": date, "side": action,
++            "quantity": quantity, "sizing_close": self.data.close[0],
++            "cash_at_submission": self.broker.getcash(), "prior_adv_dollars": adv,
++            "latest_observed_session": date, "events": []}
++        self.orders.append(intent)
++        submit = self.buy if action == "BUY" else self.sell
++        self.pending = submit(size=quantity, exectype=bt.Order.Market,
++                              intent_index=len(self.orders)-1, prior_adv_dollars=adv)
++
++
++def run_backtest(snapshot: dict, cfg: Config) -> dict:
++    rows = validate(snapshot, cfg)
++    if any(r["split"] != 1 for r in rows):
++        raise DataError("SPLIT_UNSUPPORTED_BY_BACKTRADER_ADAPTER: require corporate-action capable engine")
++    first = next(i for i, r in enumerate(rows) if cfg.start <= r["date"] <= cfg.end)
++    feed = FrozenFeed(rows=(r for r in rows if r["date"] <= cfg.end))
++    cerebro = bt.Cerebro(preload=False, runonce=False, stdstats=False, cheat_on_open=False)
++    cerebro.adddata(feed)
++    broker = ResearchBroker(cfg=cfg, feed=feed)
++    broker.setcash(cfg.initial_cash)
++    broker.set_coc(False)
++    broker.set_coo(False)
++    broker.addcommissioninfo(Fees(fixed=cfg.fee_fixed, bps=cfg.fee_bps))
++    cerebro.setbroker(broker)
++    cerebro.addstrategy(SmaStrategy, cfg=cfg, first_signal_date=rows[first-1]["date"])
++    strategy = cerebro.run()[0]
++    days, fills = strategy.days, strategy.fills
++    open_pnl = (strategy.position.size * days[-1]["close"] - strategy.entry_cost +
++                strategy.cycle_dividends) if strategy.position else 0.0
++    residual = days[-1]["equity"] - cfg.initial_cash - sum(strategy.closed_pnls) - open_pnl
++    if abs(residual) > 1e-6: raise ArithmeticError("Backtrader PnL reconciliation failed")
++    return {"engine": {"name": "backtrader", "version": bt.__version__, "preload": False,
++                       "runonce": False, "cheat_on_close": False, "cheat_on_open": False},
++        "metrics": metrics(days, cfg.initial_cash, cfg, strategy.closed_pnls, len(fills)),
++        "orders": strategy.orders, "trades": fills, "daily": days,
++        "corporate_actions": strategy.events, "rejected_orders": strategy.rejections,
++        "cost_totals": {k: sum(t[k] for t in fills) for k in ("fee", "slippage_cost", "impact_cost")},
++        "dividend_income": strategy.dividend_total, "open_position_pnl": open_pnl,
++        "realized_pnl": sum(strategy.closed_pnls), "pnl_reconciliation_residual": residual,
++        "open_shares": strategy.position.size, "last_signal_not_executed": strategy.last_action,
++        "conventions": {"signal": "Completed close SMA strict crossing; streaming Backtrader indicators",
++            "execution": "Quantity fixed at signal close; Backtrader next-open Market fill or margin rejection; no resize/retry",
++            "sizing": "Use allocation fraction of signal-close cash and close price, reserving maximum stated costs",
++            "dividends": "Prior holders credited on ex-date at end of broker cycle, unavailable to same-open orders; not payment date",
++            "prices": "Unadjusted OHLC; Adj Close never used; splits explicitly rejected",
++            "terminal": "Last close mark; no forced liquidation",
++            "scope": "Trusted fixed SPY strategy, no arbitrary-agent sandbox or point-in-time vendor data guarantee"}}
+diff --git a/etf_lab/engine.py b/etf_lab/engine.py
+index b427ce9..9ed3be2 100644
+--- a/etf_lab/engine.py
++++ b/etf_lab/engine.py
+@@ -30,0 +31 @@ class Config:
++    allocation: float = 0.95
+@@ -50,0 +52,2 @@ class Config:
++        if isinstance(self.allocation, bool) or not isinstance(self.allocation, (int, float)) or not 0 < self.allocation <= 1:
++            raise ValueError("allocation must be in (0, 1]")
+@@ -171,0 +175 @@ def run_backtest(snapshot: dict, cfg: Config) -> dict:
++    """Legacy diagnostic only: sizes at next open; NOT the main execution engine."""
+diff --git a/etf_lab/execution_contract.py b/etf_lab/execution_contract.py
+new file mode 100644
+index 0000000..e8bff95
+--- /dev/null
++++ b/etf_lab/execution_contract.py
+@@ -0,0 +1,39 @@
++"""Check the auditable order/fill time contract; not a proof for arbitrary code."""
++import math
++
++from .engine import Config
++
++
++def validate_execution(result, snapshot, cfg: Config):
++    engine = result.get("engine", {})
++    if (engine.get("name") != "backtrader" or engine.get("version") != "1.9.78.123" or
++            any(engine.get(k) is not False for k in ("preload", "runonce", "cheat_on_open", "cheat_on_close"))):
++        raise ValueError("UNAPPROVED_EXECUTION_POLICY")
++    bars = snapshot["bars"]
++    indices = {b["date"]: i for i, b in enumerate(bars)}
++    orders = {o["sequence"]: o for o in result["orders"]}
++    if len(orders) != len(result["orders"]): raise ValueError("DUPLICATE_ORDER_SEQUENCE")
++    for order in orders.values():
++        i = indices[order["date"]]
++        if order["latest_observed_session"] != order["date"]:
++            raise ValueError("INVALID_INFORMATION_CUTOFF")
++        if order["sizing_close"] != bars[i]["close"]:
++            raise ValueError("SIZING_PRICE_IS_NOT_SIGNAL_CLOSE")
++        adv = sum(b["close"] * b["volume"] for b in bars[i-cfg.adv_window+1:i+1]) / cfg.adv_window
++        if not math.isclose(adv, order["prior_adv_dollars"], rel_tol=1e-12):
++            raise ValueError("ADV_INCLUDES_WRONG_SESSIONS")
++        if order["side"] == "BUY":
++            price = bars[i]["close"] * (1 + (cfg.slippage_bps + cfg.impact_bps)/10000)
++            qty = math.floor((order["cash_at_submission"] * cfg.allocation - cfg.fee_fixed) /
++                             (price * (1 + cfg.fee_bps/10000)))
++            if qty != order["quantity"]: raise ValueError("QUANTITY_NOT_FIXED_AT_SIGNAL_CLOSE")
++    for fill in result["trades"]:
++        order = orders[fill["order_sequence"]]
++        if indices[fill["date"]] != indices[order["date"]] + 1:
++            raise ValueError("FILL_NOT_NEXT_SESSION")
++        if fill["quantity"] != order["quantity"] or fill["side"] != order["side"]:
++            raise ValueError("FILL_CHANGED_SUBMITTED_ORDER")
++        if fill["signal_date"] != order["date"]: raise ValueError("SIGNAL_BINDING_MISMATCH")
++    return {"status": "passed", "policy": "fixed-close-order-next-open-v1",
++            "orders_checked": len(orders), "fills_checked": len(result["trades"]),
++            "limitation": "Mechanical execution contract only; no vendor point-in-time or arbitrary-code isolation guarantee"}
+diff --git a/etf_lab/handoff.py b/etf_lab/handoff.py
+index f731a67..e6f6713 100644
+--- a/etf_lab/handoff.py
++++ b/etf_lab/handoff.py
+@@ -87,0 +88,8 @@ def gate(output: Path, case_id: str, run_id: str):
++    from .execution_contract import validate_execution
++    result = read_json(folder / "result.json")
++    try:
++        checked = validate_execution(result, read_json(folder / "snapshot.json"), Config(**case["input"]["strategy"]))
++        if result.get("execution_validation") != checked:
++            raise ValueError("Missing or inconsistent execution validation")
++    except (ValueError, TypeError, KeyError, IndexError):
++        raise EvidenceError("EXECUTION_CONTRACT_REJECTED") from None
+diff --git a/etf_lab/report.py b/etf_lab/report.py
+index 0c6243c..41ac684 100644
+--- a/etf_lab/report.py
++++ b/etf_lab/report.py
+@@ -55,0 +56 @@ def render(directory: Path, result: dict, cfg: Config, snapshot: dict, receipt:
++    orders = table(result.get("orders", []), [("sequence", "订单序号"), ("date", "提交收盘日"), ("side", "方向"), ("quantity", "预先固定股数"), ("sizing_close", "定量用已知收盘"), ("cash_at_submission", "提交时现金"), ("latest_observed_session", "最晚可见交易日")])
+@@ -60 +61 @@ def render(directory: Path, result: dict, cfg: Config, snapshot: dict, receipt:
+-<div class="note"><strong>可逐笔复核的 ETF 样板；任务二采用用户确认的独立研究可靠性验收范围。</strong><br>真实现有算法对照、机构论文重放与三场景证据在配套交付目录。本页曲线中的简化参考为本地诊断；没有接入任何现有 CIO。</div>
++<div class="note"><strong>Backtrader 1.9.78.123 执行；前收盘固定股数，次日开盘成交或拒单。</strong><br>关闭预加载及 cheat-on-open/close。旧自写引擎存在次日开盘反算股数的问题，旧报告仅保留为历史。当前结果仍不是历史当时数据版本的保证，也不是任意 Agent 的沙箱。任务二是独立运行/结果验收层，没有接入原 CIO。</div>
+@@ -65,0 +67,2 @@ def render(directory: Path, result: dict, cfg: Config, snapshot: dict, receipt:
++  BUY quantity = floor((cash[t] * allocation - fixed_fee) / conservative_close_cost[t])
++  freeze quantity; submit Backtrader Market order
+@@ -67,2 +70 @@ at open[t+1]:
+-  credit prior-holder dividend under declared ex-date cash assumption
+-  BUY: largest integer quantity affordable after all costs
++  BUY: execute the already-fixed quantity, or reject for insufficient cash; NEVER resize
+@@ -70 +72,2 @@ at open[t+1]:
+-at close[t+1]: equity = cash + shares × unadjusted close</pre><p>样本前数据仅用于预热；不会为样本前已经发生的交叉追补持仓。最后一个收盘信号没有未来成交日时不执行。均线使用当时已知拆股调整、未作股息调整的价格。</p></section>
++at close[t+1]: credit prior-holder dividend; equity = broker cash + broker shares × raw close</pre><p>下单使用前收盘现金的 {cfg.allocation:.0%}，按已知收盘价格和最高声明成本估算股数；剩余现金只是缓冲，跳空仍可能拒单。股数不会按次日开盘反算。最后收盘可以留下未成交订单；不会虚构未来成交。均线只使用未复权收盘；含拆股的数据明确拒绝，尚未实现拆股公司行动支持。</p></section>
++<section><h2>提交订单与执行契约</h2><p>订单数量在成交前固定；意图与成交分开保存。提交/消费环节重新检查时间顺序、股数及框架配置，不仅检查文件哈希。</p>{orders}<pre>{escape(json.dumps(result.get('execution_validation',{}),ensure_ascii=False,indent=2))}</pre></section>
+@@ -75 +78 @@ at close[t+1]: equity = cash + shares × unadjusted close</pre><p>样本前数
+-<section><h2>公司行动与拒单</h2><details><summary>展开分红 / 拆股事件（{len(result['corporate_actions'])}）</summary>{events}</details><p>现金不足拒单：{len(result['rejected_orders'])} 笔。</p><pre>{escape(json.dumps(result['rejected_orders'],ensure_ascii=False,indent=2))}</pre></section>
++<section><h2>公司行动与拒单</h2><details><summary>展开分红事件（{len(result['corporate_actions'])}）</summary>{events}</details><p>提交或经纪商拒单：{len(result['rejected_orders'])} 笔。</p><pre>{escape(json.dumps(result['rejected_orders'],ensure_ascii=False,indent=2))}</pre></section>
+diff --git a/pyproject.toml b/pyproject.toml
+index 1adb1ef..1412e2e 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -8 +8 @@ version = "0.1.0"
+-description = "Auditable single-ETF research backtest; CIO integration pending original contract"
++description = "Backtrader ETF research and independent result acceptance"
+@@ -10 +10 @@ requires-python = ">=3.11"
+-dependencies = ["yfinance", "matplotlib", "exchange-calendars"]
++dependencies = ["yfinance", "matplotlib", "exchange-calendars", "backtrader==1.9.78.123"]
+diff --git a/requirements.lock.txt b/requirements.lock.txt
+index 1a91416..66b5c0d 100644
+--- a/requirements.lock.txt
++++ b/requirements.lock.txt
+@@ -1,0 +2 @@ beautifulsoup4==4.15.0
++backtrader==1.9.78.123
+diff --git a/scripts/audit_causality.py b/scripts/audit_causality.py
+new file mode 100644
+index 0000000..ff1c032
+--- /dev/null
++++ b/scripts/audit_causality.py
+@@ -0,0 +1,80 @@
++"""Independent metamorphic experiments; no duplicated matching implementation."""
++import argparse
++from copy import deepcopy
++from dataclasses import replace
++import json
++from pathlib import Path
++import sys
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(ROOT))
++sys.path.insert(0, str(ROOT / "tests"))
++from etf_lab.artifacts import read_json, sha, write_new
++from etf_lab.backtrader_engine import run_backtest
++from etf_lab.engine import Config, run_backtest as legacy
++from fixtures import sample, change_price
++
++
++def intents(result, cutoff):
++    return [{k: v for k, v in order.items() if k != "events"}
++            for order in result["orders"] if order["date"] <= cutoff]
++
++
++def assert_prefix(reference, changed, cutoff):
++    for key in ("daily", "trades"):
++        assert [x for x in reference[key] if x["date"] <= cutoff] == [x for x in changed[key] if x["date"] <= cutoff]
++    assert intents(reference, cutoff) == intents(changed, cutoff)
++
++
++def main():
++    parser = argparse.ArgumentParser()
++    parser.add_argument("--output", type=Path, required=True)
++    output = parser.parse_args().output
++    if output.exists(): raise SystemExit("Choose a new evidence path")
++    snapshot = read_json(ROOT / "data/spy.json")
++    cfg = Config(**read_json(ROOT / "config/spy.json"))
++    original = run_backtest(snapshot, cfg)
++    checks = []
++    for cutoff in ("2017-12-29", "2020-12-31", "2024-12-31"):
++        truncated = deepcopy(snapshot)
++        truncated["bars"] = [x for x in snapshot["bars"] if x["date"] <= cutoff]
++        truncated["expected_sessions"] = [x["date"] for x in truncated["bars"]]
++        truncated["coverage"]["end_inclusive"] = cutoff
++        truncated["data_cutoff"] = cutoff
++        replay = run_backtest(truncated, replace(cfg, end=cutoff))
++        assert_prefix(original, replay, cutoff)
++        checks.append({"experiment": "truncate_at", "cutoff": cutoff, "status": "passed",
++                       "equal_daily_rows": len(replay["daily"]), "equal_order_intents": len(replay["orders"])})
++        poisoned = deepcopy(snapshot)
++        for bar in poisoned["bars"]:
++            if bar["date"] > cutoff:
++                for key in ("open", "high", "low", "close"): bar[key] *= 10
++                bar["volume"] = 1
++                bar["dividend"] = 0
++                bar["adj_close"] = -1e9
++        replay = run_backtest(poisoned, cfg)
++        assert_prefix(original, replay, cutoff)
++        checks.append({"experiment": "poison_future_tail", "cutoff": cutoff, "status": "passed"})
++    toy, toy_cfg = sample()
++    before_legacy = legacy(toy, toy_cfg)["trades"][0]
++    change_price(toy["bars"][6], open=20)
++    after_legacy = legacy(toy, toy_cfg)["trades"][0]
++    assert (before_legacy["quantity"], after_legacy["quantity"]) == (71, 50)
++    before_new = run_backtest(sample()[0], replace(toy_cfg, allocation=.5))
++    after_new = run_backtest(toy, replace(toy_cfg, allocation=.5))
++    assert intents(before_new, "2020-01-06") == intents(after_new, "2020-01-06")
++    regression = {"signal_close": 12, "next_open_before": 14, "next_open_after": 20,
++        "legacy_quantity_before": 71, "legacy_quantity_after": 50,
++        "fixed_order_quantity_before": before_new["orders"][0]["quantity"],
++        "fixed_order_quantity_after": after_new["orders"][0]["quantity"],
++        "new_fixture_allocation": .5,
++        "meaning": "Changing tomorrow's open alters legacy sizing, but not today's new submitted quantity. Absolute quantities across versions are not compared because allocation differs."}
++    report = {"status": "passed", "snapshot_sha256": sha((ROOT/"data/spy.json").read_bytes()),
++        "script_sha256": sha(Path(__file__).read_bytes()), "config": cfg.to_dict(),
++        "engine": original["engine"], "checks": checks, "regression": regression,
++        "limits": "Evidence for this fixed strategy and data path; does not establish vendor point-in-time data, absence of overfitting, or hostile-code isolation."}
++    write_new(output, report)
++    print(json.dumps(report, ensure_ascii=True, indent=2))
++
++
++if __name__ == "__main__": main()
+diff --git a/scripts/compare_existing.py b/scripts/compare_existing.py
+index 53f4b21..9c3d3a5 100644
+--- a/scripts/compare_existing.py
++++ b/scripts/compare_existing.py
+@@ -15 +15,2 @@ from etf_lab.artifacts import encoded, read_json, sha, write_new
+-from etf_lab.engine import Config, metrics, run_backtest
++from etf_lab.engine import Config, metrics
++from etf_lab.backtrader_engine import run_backtest
+diff --git a/scripts/demo_reliability.py b/scripts/demo_reliability.py
+index 1c425c8..41d0ba2 100644
+--- a/scripts/demo_reliability.py
++++ b/scripts/demo_reliability.py
+@@ -24,0 +25 @@ def main():
++    cfg = replace(cfg, allocation=.5)  # Fixture gaps are large; exercise actual fills too.
+diff --git a/scripts/reproduce.py b/scripts/reproduce.py
+index b42ac16..987af88 100644
+--- a/scripts/reproduce.py
++++ b/scripts/reproduce.py
+@@ -36,0 +37 @@ def main():
++        run("causality", ["scripts/audit_causality.py", "--output", str(output / "causality.json")])
+@@ -50 +51 @@ def main():
+-             "passed": len(checks) == 11 and all(x["passed"] for x in checks)}, indent=2)+"\n", encoding="utf-8")
++             "passed": len(checks) == 12 and all(x["passed"] for x in checks)}, indent=2)+"\n", encoding="utf-8")
+diff --git a/tests/test_backtrader.py b/tests/test_backtrader.py
+new file mode 100644
+index 0000000..117947d
+--- /dev/null
++++ b/tests/test_backtrader.py
+@@ -0,0 +1,176 @@
++"""Causal execution tests; compare time prefixes and independent money arithmetic."""
++from copy import deepcopy
++from dataclasses import replace
++import unittest
++from unittest.mock import patch
++
++from etf_lab.backtrader_engine import run_backtest
++from etf_lab.engine import DataError
++from etf_lab.execution_contract import validate_execution
++from fixtures import sample, change_price
++
++
++def intent(order):
++    return {k: v for k, v in order.items() if k != "events"}
++
++
++class BacktraderAcceptance(unittest.TestCase):
++    def setUp(self):
++        self.snapshot, original = sample()
++        self.cfg = replace(original, allocation=.5)
++
++    def test_framework_and_hand_calculated_round_trip(self):
++        r = run_backtest(self.snapshot, self.cfg)
++        self.assertEqual(r["engine"]["name"], "backtrader")
++        self.assertEqual(r["engine"]["version"], "1.9.78.123")
++        self.assertFalse(any(r["engine"][x] for x in ("preload", "runonce", "cheat_on_open", "cheat_on_close")))
++        # $500 budget / Jan 6 close $12 => 41 shares, fixed before Jan 7 $14 open.
++        self.assertEqual([(t["date"], t["quantity"], t["price"]) for t in r["trades"]],
++                         [("2020-01-07", 41, 14), ("2020-01-10", 41, 8)])
++        self.assertEqual(r["trades"][0]["cash_after"], 426)
++        self.assertEqual(r["metrics"]["ending_equity"], 754)
++        self.assertEqual(r["trades"][1]["realized_pnl"], -246)
++
++    def test_next_open_cannot_change_prior_submitted_quantity(self):
++        baseline = run_backtest(self.snapshot, self.cfg)
++        change_price(self.snapshot["bars"][6], open=20)
++        changed = run_backtest(self.snapshot, self.cfg)
++        self.assertEqual(intent(baseline["orders"][0]), intent(changed["orders"][0]))
++        self.assertEqual(changed["trades"][0]["quantity"], 41)
++        self.assertEqual(changed["trades"][0]["price"], 20)
++
++    def test_gap_insufficient_cash_is_broker_margin_not_resizing(self):
++        change_price(self.snapshot["bars"][6], open=30)
++        r = run_backtest(self.snapshot, self.cfg)
++        self.assertEqual(r["orders"][0]["quantity"], 41)
++        self.assertEqual(r["trades"], [])
++        self.assertEqual(r["rejected_orders"][0]["reason"], "BROKER_MARGIN")
++        self.assertEqual(r["rejected_orders"][0]["quantity"], 41)
++        self.assertEqual(r["metrics"]["ending_equity"], 1000)
++
++    def test_execution_day_close_high_low_volume_do_not_affect_open_fill(self):
++        cfg = replace(self.cfg, slippage_bps=5, impact_threshold=0, impact_bps=10)
++        before = run_backtest(self.snapshot, cfg)
++        bar = self.snapshot["bars"][6]
++        change_price(bar, close=999)
++        bar.update(high=9999, low=1, volume=10**12)
++        after = run_backtest(self.snapshot, cfg)
++        self.assertEqual(intent(before["orders"][0]), intent(after["orders"][0]))
++        self.assertEqual(before["trades"][0], after["trades"][0])
++
++    def test_future_tail_changes_leave_past_daily_signals_and_orders_identical(self):
++        before = run_backtest(self.snapshot, self.cfg)
++        for bar in self.snapshot["bars"][8:]:
++            change_price(bar, open=bar["open"]*100, close=bar["close"]*200)
++            bar.update(volume=1, dividend=100, adj_close=-999)
++        after = run_backtest(self.snapshot, self.cfg)
++        cutoff = "2020-01-08"
++        for key in ("daily", "trades"):
++            self.assertEqual([x for x in before[key] if x["date"] <= cutoff],
++                             [x for x in after[key] if x["date"] <= cutoff])
++        self.assertEqual([intent(x) for x in before["orders"] if x["date"] <= cutoff],
++                         [intent(x) for x in after["orders"] if x["date"] <= cutoff])
++
++    def test_truncated_replay_matches_full_history_at_each_cutoff(self):
++        full = run_backtest(self.snapshot, self.cfg)
++        for cutoff in ("2020-01-06", "2020-01-07", "2020-01-08", "2020-01-09", "2020-01-10"):
++            with self.subTest(cutoff=cutoff):
++                truncated = deepcopy(self.snapshot)
++                truncated["bars"] = [x for x in truncated["bars"] if x["date"] <= cutoff]
++                truncated["expected_sessions"] = [x["date"] for x in truncated["bars"]]
++                truncated["data_cutoff"] = cutoff
++                truncated["coverage"]["end_inclusive"] = cutoff
++                short = run_backtest(truncated, replace(self.cfg, end=cutoff))
++                for key in ("daily", "trades"):
++                    self.assertEqual(short[key], [x for x in full[key] if x["date"] <= cutoff])
++                self.assertEqual([intent(x) for x in short["orders"]],
++                                 [intent(x) for x in full["orders"] if x["date"] <= cutoff])
++
++    def test_adj_close_is_not_a_signal_or_cash_input(self):
++        before = run_backtest(self.snapshot, self.cfg)
++        for n, bar in enumerate(self.snapshot["bars"]): bar["adj_close"] = n * 1000000
++        self.assertEqual(before, run_backtest(self.snapshot, self.cfg))
++
++    def test_unsupported_split_is_rejected_explicitly(self):
++        self.snapshot["bars"][7]["split"] = 2
++        with self.assertRaisesRegex(DataError, "SPLIT_UNSUPPORTED"):
++            run_backtest(self.snapshot, self.cfg)
++
++    def test_dividend_credits_prior_holders_once(self):
++        self.snapshot["bars"][7]["dividend"] = 1
++        for bar in self.snapshot["bars"][7:]:
++            change_price(bar, open=bar["open"]-1, close=bar["close"]-1)
++        r = run_backtest(self.snapshot, self.cfg)
++        self.assertEqual(r["dividend_income"], 41)
++        self.assertEqual(r["metrics"]["ending_equity"], 754)
++        self.assertEqual(r["trades"][1]["realized_pnl"], -246)
++
++    def test_ex_date_buyer_does_not_receive_dividend(self):
++        self.snapshot["bars"][6]["dividend"] = 1
++        self.assertEqual(run_backtest(self.snapshot, self.cfg)["dividend_income"], 0)
++
++    def test_ex_date_seller_receives_dividend_in_closed_pnl(self):
++        self.snapshot["bars"][9]["dividend"] = 1
++        r = run_backtest(self.snapshot, self.cfg)
++        self.assertEqual(r["dividend_income"], 41)
++        self.assertEqual(r["trades"][1]["realized_pnl"], -205)
++        self.assertEqual(r["metrics"]["ending_equity"], 795)
++
++    def test_fee_slippage_impact_are_applied_once_by_framework(self):
++        cfg = replace(self.cfg, fee_fixed=1, fee_bps=10, slippage_bps=5, impact_bps=10, impact_threshold=0)
++        r = run_backtest(self.snapshot, cfg)
++        buy, sell = r["trades"]
++        self.assertEqual(buy["quantity"], 41)
++        self.assertAlmostEqual(buy["price"], 14*1.0015)
++        self.assertAlmostEqual(sell["price"], 8*.9985)
++        cash = 1000 - 41*14*1.0015 - (1+41*14*1.0015*.001) + 41*8*.9985 - (1+41*8*.9985*.001)
++        self.assertAlmostEqual(r["metrics"]["ending_equity"], cash)
++        self.assertAlmostEqual(r["cost_totals"]["impact_cost"], 41*22*.001)
++
++    def test_missing_session_stops_before_execution(self):
++        del self.snapshot["bars"][6]
++        with self.assertRaisesRegex(DataError, "Missing or extra"):
++            run_backtest(self.snapshot, self.cfg)
++
++    def test_insufficient_cash_at_submission_produces_no_order(self):
++        r = run_backtest(self.snapshot, replace(self.cfg, initial_cash=10, fee_fixed=1))
++        self.assertEqual(r["orders"], [])
++        self.assertEqual(r["trades"], [])
++        self.assertEqual(r["rejected_orders"][0]["reason"], "INSUFFICIENT_CASH_AT_SUBMISSION")
++
++    def test_repeated_runs_are_identical_despite_framework_global_order_refs(self):
++        self.assertEqual(run_backtest(self.snapshot, self.cfg), run_backtest(self.snapshot, self.cfg))
++
++    def test_no_fictional_terminal_sale(self):
++        r = run_backtest(self.snapshot, replace(self.cfg, end="2020-01-08"))
++        self.assertEqual(len(r["trades"]), 1)
++        self.assertEqual(r["metrics"]["round_trip_count"], 0)
++        self.assertEqual(r["open_shares"], 41)
++
++    def test_future_line_is_not_preloaded(self):
++        from etf_lab.backtrader_engine import SmaStrategy
++        normal = SmaStrategy.next
++        observed = []
++        def checked(strategy):
++            with self.assertRaises(IndexError):
++                _ = strategy.data.close[1]
++            observed.append(strategy.data.datetime.date(0))
++            normal(strategy)
++        with patch.object(SmaStrategy, "next", checked):
++            run_backtest(self.snapshot, self.cfg)
++        self.assertGreater(len(observed), 0)
++
++    def test_result_contract_rejects_same_day_fill_and_retroactive_resize(self):
++        result = run_backtest(self.snapshot, self.cfg)
++        self.assertEqual(validate_execution(result, self.snapshot, self.cfg)["status"], "passed")
++        for mutation, code in ((lambda r: r["trades"][0].update(date=r["orders"][0]["date"]), "FILL_NOT_NEXT_SESSION"),
++                               (lambda r: r["trades"][0].update(quantity=40), "FILL_CHANGED_SUBMITTED_ORDER"),
++                               (lambda r: r["orders"][0].update(quantity=71), "QUANTITY_NOT_FIXED"),
++                               (lambda r: r["engine"].update(cheat_on_close=True), "UNAPPROVED_EXECUTION")):
++            changed = deepcopy(result)
++            mutation(changed)
++            with self.assertRaisesRegex(ValueError, code):
++                validate_execution(changed, self.snapshot, self.cfg)
++
++
++if __name__ == "__main__": unittest.main()
+diff --git a/tests/test_handoff.py b/tests/test_handoff.py
+index f11227b..cb4640c 100644
+--- a/tests/test_handoff.py
++++ b/tests/test_handoff.py
+@@ -8 +8 @@ from unittest.mock import patch
+-from etf_lab.artifacts import EvidenceError, execute, read_json, write_new
++from etf_lab.artifacts import EvidenceError, execute, read_json, write_new, encoded, sha, verify
+@@ -30,0 +31,20 @@ class ResearchContract(unittest.TestCase):
++    def test_valid_hashes_do_not_make_invalid_execution_policy_acceptable(self):
++        # Deliberately produce an internally re-sealed bad result ONLY in TemporaryDirectory.
++        # This demonstrates semantic rejection in addition to byte-integrity checks.
++        folder = self.root / "runs/run1"
++        result = read_json(folder / "result.json")
++        result["engine"]["cheat_on_close"] = True
++        (folder / "result.json").write_bytes(encoded(result))
++        receipt = read_json(folder / "receipt.json")
++        receipt["result_id"] = sha(encoded(result))
++        (folder / "receipt.json").write_bytes(encoded(receipt))
++        manifest = read_json(folder / "integrity.json")
++        manifest["files"] = {name: sha((folder/name).read_bytes()) for name in manifest["files"]}
++        (folder / "integrity.json").write_bytes(encoded(manifest))
++        self.assertEqual(verify(folder)["status"], "succeeded")  # byte consistency only
++        rejected = submit(self.root, "invalid-policy", "v1", "run1")
++        self.assertEqual(rejected["status"], "rejected")
++        self.assertIn("EXECUTION_CONTRACT_REJECTED", rejected["reason"])
++        with self.assertRaisesRegex(EvidenceError, "EXECUTION_CONTRACT_REJECTED"):
++            consume(self.root, "first", "v1")
++

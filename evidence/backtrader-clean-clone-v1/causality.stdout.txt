@@ -1,0 +1,82 @@
+{
+  "status": "passed",
+  "snapshot_sha256": "bb303715db5fc117adc258e975b7a9632559d3ce901179368816b80aa049cd63",
+  "script_sha256": "930dff716ac7a347a2565f47a373478b07645bcc4eed91fbcb841ee58b4eb0e9",
+  "config": {
+    "strategy_version": "spy-sma-cross-v2-fixed-close-orders",
+    "fast": 20,
+    "slow": 50,
+    "start": "2015-01-02",
+    "end": "2025-12-31",
+    "initial_cash": 100000.0,
+    "slippage_bps": 5.0,
+    "fee_fixed": 1.0,
+    "fee_bps": 0.0,
+    "impact_threshold": 0.01,
+    "impact_bps": 10.0,
+    "adv_window": 20,
+    "annualization": 252,
+    "dividend_policy": "cash_on_ex_date",
+    "terminal_policy": "mark_to_market",
+    "risk_free_annual": 0.0,
+    "allocation": 0.95
+  },
+  "engine": {
+    "name": "backtrader",
+    "version": "1.9.78.123",
+    "preload": false,
+    "runonce": false,
+    "cheat_on_close": false,
+    "cheat_on_open": false
+  },
+  "checks": [
+    {
+      "experiment": "truncate_at",
+      "cutoff": "2017-12-29",
+      "status": "passed",
+      "equal_daily_rows": 755,
+      "equal_order_intents": 19
+    },
+    {
+      "experiment": "poison_future_tail",
+      "cutoff": "2017-12-29",
+      "status": "passed"
+    },
+    {
+      "experiment": "truncate_at",
+      "cutoff": "2020-12-31",
+      "status": "passed",
+      "equal_daily_rows": 1511,
+      "equal_order_intents": 31
+    },
+    {
+      "experiment": "poison_future_tail",
+      "cutoff": "2020-12-31",
+      "status": "passed"
+    },
+    {
+      "experiment": "truncate_at",
+      "cutoff": "2024-12-31",
+      "status": "passed",
+      "equal_daily_rows": 2516,
+      "equal_order_intents": 49
+    },
+    {
+      "experiment": "poison_future_tail",
+      "cutoff": "2024-12-31",
+      "status": "passed"
+    }
+  ],
+  "regression": {
+    "signal_close": 12,
+    "next_open_before": 14,
+    "next_open_after": 20,
+    "legacy_quantity_before": 71,
+    "legacy_quantity_after": 50,
+    "fixed_order_quantity_before": 41,
+    "fixed_order_quantity_after": 41,
+    "new_fixture_allocation": 0.5,
+    "meaning": "Changing tomorrow's open alters legacy sizing, but not today's new submitted quantity. Absolute quantities across versions are not compared because allocation differs."
+  },
+  "limits": "Evidence for this fixed strategy and data path; does not establish vendor point-in-time data, absence of overfitting, or hostile-code isolation."
+}
